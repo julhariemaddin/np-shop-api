@@ -38,7 +38,10 @@ public class SpringSecurityConfig {
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                          authorizeRequests.requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/v1/category").hasRole("USER")
+                        .requestMatchers(HttpMethod.GET,"/api/v1/category/**").permitAll()
+                                 .requestMatchers(HttpMethod.POST,"/api/v1/category").hasAnyRole("ADMIN","SUPER_ADMIN")
+                                 .requestMatchers(HttpMethod.PUT,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
+                                 .requestMatchers(HttpMethod.DELETE,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                            .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilterChain, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

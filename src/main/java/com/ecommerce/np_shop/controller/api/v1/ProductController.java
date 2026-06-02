@@ -13,12 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1")
 @AllArgsConstructor
 public class ProductController {
-    private final ProductServiceImpl productService;
-    @PostMapping(value = "/product"
-    ,
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<?> addProduct(@Valid @RequestPart ProductRequest product , @RequestPart("file") MultipartFile file) {
-        return ResponseEntity.ok(productService.createProduct(product,file));
-    }
+  private final ProductServiceImpl productService;
+
+  @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<?> addProduct(
+      @Valid @RequestPart ProductRequest product, @RequestPart("file") MultipartFile file) {
+    return ResponseEntity.ok(productService.createProduct(product, file));
+  }
 }
