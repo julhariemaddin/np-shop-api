@@ -1,0 +1,65 @@
+@BaseUrl = http://localhost:8080/api
+
+###
+POST {{BaseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "username": "Lol1123",
+  "password": "JuL@12345",
+  "email": "jul@gmil.com"
+}
+###
+POST {{BaseUrl}}/auth/sign-in
+Content-Type: application/json
+
+{
+  "username": "Lol1123",
+  "password": "JuL@12345"
+}
+###
+POST {{BaseUrl}}/v1/category
+Content-Type: application/json
+
+{
+  "categoryName" : "a.p"
+}
+
+###
+GET {{BaseUrl}}/v1/category
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYmRjYmU0MS0yOTg3LTQyODctYWUwMS1kN2VmZjFmOThmNTciLCJpYXQiOjE3ODAxOTk4NzMsImV4cCI6MTc4MDIwMDc3M30.F-oDxd7lZKeVP2we4WpYT2351NAZeEQYscQoKI6fQk0
+
+###
+POST {{BaseUrl}}/v1/product
+Content-Type: application/json
+
+{
+  "name": "SmartPhone",
+  "description": "Very Smart Phone",
+  "price": 123,
+  "stock": 2 ,
+  "categoryId": "00cd6f36-7bed-4c9d-94d6-bb380d4bce9c"
+}
+
+###
+POST {{BaseUrl}}/v1/product
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="product"
+Content-Type: application/json
+
+{
+  "name": "SmartPhone",
+  "description": "Very Smart Phone",
+  "price": 123,
+  "stock": 2,
+  "categoryId": "00cd6f36-7bed-4c9d-94d6-bb380d4bce9c"
+}
+--boundary
+Content-Disposition: form-data; name="file"; filename="Screenshot.png"
+Content-Type: image/png
+
+< C:/Users/Acer/Pictures/PRIVATE PICTURES/Screenshots/Screenshot 2026-05-25 182255.png
+
+--boundary--

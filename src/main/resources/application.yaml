@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: np-shop
+  jpa:
+    hibernate:
+      ddl-auto: update
+  profiles:
+    active: dev
+  messages:
+    basename: messages
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  data:
+    redis:
+      host: Localhost
+      port: 6379
+      password: StrongPassword
+server:
+  port: 8080
+
+jwt:
+  secret: a7f3k9mX2pQwR8vL5nJcYdEhBuTsGiZoA4eN6WqC1xDyPmFjKrHbVgUlSt0Owz
+  expiration : 900000
