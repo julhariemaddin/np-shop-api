@@ -4,6 +4,8 @@ import com.ecommerce.np_shop.entity.Account;
 import com.ecommerce.np_shop.entity.Role;
 import com.ecommerce.np_shop.repo.AccountRepository;
 import com.ecommerce.np_shop.repo.RoleRepository;
+import com.ecommerce.np_shop.security.AccountDetails;
+import com.ecommerce.np_shop.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,6 +18,7 @@ public class StartRunner implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -28,7 +31,6 @@ public class StartRunner implements CommandLineRunner {
             Role superAdmin =  new Role();
             superAdmin.setName("ROLE_SUPER_ADMIN");
             admin.setName("ROLE_ADMIN");
-            user.setName("ROLE_USER");
             roleRepository.save(superAdmin);
             roleRepository.save(admin);
             roleRepository.save(user);
@@ -40,26 +42,17 @@ public class StartRunner implements CommandLineRunner {
             account.setPassword(passwordEncoder.encode("SuperAdminPassword"));
             account.getRoles().add(roleRepository.findByName("ROLE_SUPER_ADMIN"));
             account.getRoles().add(roleRepository.findByName("ROLE_ADMIN"));
-            account.getRoles().add(roleRepository.findByName("ROLE_USER"));
             accountRepository.save(account);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    if (!accountRepository.existsByUsername("Lol")) {
+      Account account = new Account();
+      account.setUsername("Lol");
+      account.setPassword(passwordEncoder.encode("LolPassword"));
+      account.getRoles().add(roleRepository.findByName("ROLE_USER"));
+      Account savedAccount  = accountRepository.save(account);
+      System.out.println(jwtService.generateToken(new AccountDetails(savedAccount)));
+    }
 
         //End-Data--
         /*

@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +17,7 @@ public class ProductController {
   private final ProductServiceImpl productService;
 
   @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
   public ResponseEntity<?> addProduct(
       @Valid @RequestPart ProductRequest product, @RequestPart("file") MultipartFile file) {
     return ResponseEntity.ok(productService.createProduct(product, file));

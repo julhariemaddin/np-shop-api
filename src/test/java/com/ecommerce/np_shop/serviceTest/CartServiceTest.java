@@ -159,10 +159,9 @@ public class CartServiceTest {
         when(productService.checkProductExistsAndGetProduct(cartItemRequest.getProductId())).thenReturn(product);
 
         Cart result = cartService.addItem(userId, cartItemRequest);
-        CartItem testCart;
         result.getCartItemList().stream().filter(
                 item -> item.getProductId().equals(cartItemRequest.getProductId())
-        ).findFirst().ifPresent(item -> {assertEquals(5,item.getProductQuantity());});
+        ).findFirst().ifPresent(item -> assertEquals(5,item.getProductQuantity()));
 
 
     }

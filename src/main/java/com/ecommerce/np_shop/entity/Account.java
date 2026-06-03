@@ -25,6 +25,15 @@ public class Account {
     private String email;
     private LocalDateTime createdAt;
     @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "account_roles",
+            joinColumns = @JoinColumn(
+                    name = "account_id"
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "roles_id"
+            )
+    )
     private Set<Role> roles = new HashSet<>();
     public void addRole(Role role) {
         this.roles.add(role);

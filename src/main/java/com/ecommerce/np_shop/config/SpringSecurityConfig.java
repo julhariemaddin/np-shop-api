@@ -42,6 +42,7 @@ public class SpringSecurityConfig {
                                  .requestMatchers(HttpMethod.POST,"/api/v1/category").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.PUT,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.DELETE,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
+                                 .requestMatchers("/api/v1/cart/**").hasRole("USER")
                            .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilterChain, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

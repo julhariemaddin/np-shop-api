@@ -22,3 +22,5 @@ server:
 jwt:
   secret: a7f3k9mX2pQwR8vL5nJcYdEhBuTsGiZoA4eN6WqC1xDyPmFjKrHbVgUlSt0Owz
   expiration : 900000
+base:
+  api: /api/v1
