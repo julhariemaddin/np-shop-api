@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@RequestMapping("/api/v1")
+@RequestMapping("${base.api}")
 @RestController
 @AllArgsConstructor
 public class CategoryController {
@@ -42,7 +42,7 @@ public class CategoryController {
   }
 
   @GetMapping("/category/{id}")
-  public ResponseEntity<?> getCategoryById(@RequestParam("id") UUID id) {
+  public ResponseEntity<?> getCategoryById(@PathVariable("id") UUID id) {
     return ResponseEntity.ok().body(categoryService.getCategoryById(id));
   }
 }

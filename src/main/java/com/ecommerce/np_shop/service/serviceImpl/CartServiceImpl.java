@@ -62,6 +62,8 @@ public class CartServiceImpl implements CartService {
     return cart;
   }
 
+  @Override
+  @PreAuthorize("hasRole('USER')")
   public void deleteCart(UUID userId) {
     if (!hasCart(userId)) {
       throw new RuntimeException("Cart not found for user : " + userId.toString());
@@ -69,19 +71,15 @@ public class CartServiceImpl implements CartService {
     redisTemplate.delete(getCART_PREFIX(userId));
   }
 
+  @Override
+  @PreAuthorize("hasRole('USER')")
   public void deleteItem(UUID userId, UUID productId) {
     if (!hasCart(userId)) {
       throw new RuntimeException("Cart not found for user : " + userId.toString());
     }
     Object object = redisTemplate.opsForValue().get(getCART_PREFIX(userId));
     Cart cart = checkObjectAndGetCart(object);
-    cart.getCartItemList().stream()
-        .filter(item -> item.getProductId().equals(productId))
-        .findFirst()
-        .ifPresent(
-            item -> {
-              cart.getCartItemList().remove(item);
-            });
+    cart.getCartItemList().removeIf(item -> item.getProductId().equals(productId));
     saveCart(userId, cart);
   }
 

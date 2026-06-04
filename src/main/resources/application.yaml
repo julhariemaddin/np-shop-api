@@ -16,6 +16,10 @@ spring:
       host: Localhost
       port: 6379
       password: StrongPassword
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
 server:
   port: 8080
 

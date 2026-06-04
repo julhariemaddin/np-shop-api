@@ -10,5 +10,6 @@ import java.util.UUID;
 public interface CartService {
     public Cart getCart(UUID userId);
     public Cart addItem(UUID userId , CartItemRequest cartItemRequest);
-
+    public void deleteCart(UUID userId);
+    public void deleteItem(UUID userId, UUID productId);
 }

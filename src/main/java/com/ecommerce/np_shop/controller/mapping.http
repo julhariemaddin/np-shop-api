@@ -27,7 +27,7 @@ Content-Type: application/json
 
 ###
 GET {{BaseUrl}}/v1/category
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYmRjYmU0MS0yOTg3LTQyODctYWUwMS1kN2VmZjFmOThmNTciLCJpYXQiOjE3ODAxOTk4NzMsImV4cCI6MTc4MDIwMDc3M30.F-oDxd7lZKeVP2we4WpYT2351NAZeEQYscQoKI6fQk0
+//Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYmRjYmU0MS0yOTg3LTQyODctYWUwMS1kN2VmZjFmOThmNTciLCJpYXQiOjE3ODAxOTk4NzMsImV4cCI6MTc4MDIwMDc3M30.F-oDxd7lZKeVP2we4WpYT2351NAZeEQYscQoKI6fQk0
 
 ###
 POST {{BaseUrl}}/v1/product
@@ -44,6 +44,8 @@ Content-Type: application/json
 ###
 POST {{BaseUrl}}/v1/product
 Content-Type: multipart/form-data; boundary=boundary
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYmRjYmU0MS0yOTg3LTQyODctYWUwMS1kN2VmZjFmOThmNTciLCJpYXQiOjE3ODAxOTk4NzMsImV4cCI6MTc4MDIwMDc3M30.F-oDxd7lZKeVP2we4WpYT2351NAZeEQYscQoKI6fQk0
+
 
 --boundary
 Content-Disposition: form-data; name="product"
