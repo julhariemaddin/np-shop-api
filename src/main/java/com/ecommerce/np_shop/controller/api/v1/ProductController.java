@@ -3,13 +3,10 @@ package com.ecommerce.np_shop.controller.api.v1;
 import com.ecommerce.np_shop.dto.api.v1.ProductRequest;
 import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
 import com.ecommerce.np_shop.service.ProductService;
-import com.ecommerce.np_shop.service.serviceImpl.ProductServiceImpl;
-import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
