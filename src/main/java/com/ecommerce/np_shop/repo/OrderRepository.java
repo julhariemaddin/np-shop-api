@@ -1,12 +1,10 @@
 package com.ecommerce.np_shop.repo;
 
-import com.ecommerce.np_shop.entity.Product;
+import com.ecommerce.np_shop.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, UUID> {
-
-}
+public interface OrderRepository extends JpaRepository<Order, UUID> {}
