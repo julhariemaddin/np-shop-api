@@ -20,7 +20,7 @@ target/
 *.ipr
 
 ### Upload Files ###
-
+upload/
 
 ### NetBeans ###
 /nbproject/private/
