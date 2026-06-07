@@ -1,0 +1,37 @@
+
+name: "e-commerce:"
+
+services:
+  np-shop:
+    build: .
+    container_name: np-shop
+    environment:
+      SPRING_PROFILES_ACTIVE : docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - backend-network
+
+  postgres:
+    image: postgres
+    container_name: np-shop-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    networks:
+      - backend-network
+
+  redis:
+    image: redis
+    container_name: np-shop-cache
+    command: redis-server --requirepass StrongPassword
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    driver: bridge

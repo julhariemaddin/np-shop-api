@@ -1,9 +1,10 @@
 package com.ecommerce.np_shop.security;
 
+import com.ecommerce.np_shop.exception.GlobalExceptionHandler;
 import com.ecommerce.np_shop.exception.jwtException.*;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -11,8 +12,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
-
     @Override
     public void commence(
             HttpServletRequest request,
@@ -49,7 +50,7 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             }
             case null, default -> {
                 errorCode = "UNAUTHORIZED";
-                message = "Authentication failed";
+                message = "Authentication failed or Unauthorized access";
             }
         }
 

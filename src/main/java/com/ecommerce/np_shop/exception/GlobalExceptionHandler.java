@@ -53,6 +53,10 @@ public class GlobalExceptionHandler {
                 "message" , "Unsupported Media Send"
         ));
     }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> handleException(Exception e ) {
+        return  ResponseEntity.status(HttpStatusCode.valueOf(500)).body(getErrors(e,"500"));
+    }
     private static Map<String,String> getErrors(Exception e , String code) {
         Map<String,String> errors =  new HashMap<>();
         errors.put("ERROR :","Status %s".formatted(code));

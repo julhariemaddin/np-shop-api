@@ -52,7 +52,6 @@ public class StartRunner implements CommandLineRunner {
       account.setPassword(passwordEncoder.encode("LolPassword"));
       account.getRoles().add(roleRepository.findByName("ROLE_USER"));
       Account savedAccount  = accountRepository.save(account);
-      System.out.println(jwtService.generateToken(new AccountDetails(savedAccount)));
     }
 
         //End-Data--

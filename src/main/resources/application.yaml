@@ -11,11 +11,6 @@ spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true
-  data:
-    redis:
-      host: Localhost
-      port: 6379
-      password: StrongPassword
   servlet:
     multipart:
       max-file-size: 10MB
