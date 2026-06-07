@@ -20,4 +20,5 @@ public class Payment {
     @OneToOne
     private Order order;
     private String status;
+    private Double totalPrice;
 }

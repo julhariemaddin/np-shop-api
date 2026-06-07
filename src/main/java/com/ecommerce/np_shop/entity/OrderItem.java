@@ -20,9 +20,8 @@ public class OrderItem {
     @ManyToOne
     @JoinColumn(name = "order_id")
     private Order order;
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
+    private UUID productId;
+    private Boolean productStatus;
     private int quantity;
     private double price;
 

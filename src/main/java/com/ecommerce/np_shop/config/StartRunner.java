@@ -31,6 +31,7 @@ public class StartRunner implements CommandLineRunner {
             Role superAdmin =  new Role();
             superAdmin.setName("ROLE_SUPER_ADMIN");
             admin.setName("ROLE_ADMIN");
+            user.setName("ROLE_USER");
             roleRepository.save(superAdmin);
             roleRepository.save(admin);
             roleRepository.save(user);

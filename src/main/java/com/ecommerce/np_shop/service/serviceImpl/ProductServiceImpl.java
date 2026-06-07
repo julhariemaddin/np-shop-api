@@ -153,4 +153,7 @@ public class ProductServiceImpl implements ProductService {
       }
     }
   }
+  public boolean checkProductStatus(UUID productId) {
+    return  productRepository.existsById(productId);
+  }
 }

@@ -26,9 +26,9 @@ public class Order {
     @JoinColumn(name = "account_id")
     private Account account;
     @OneToMany(mappedBy = "order")
-    private List<OrderItem> orderItems = new ArrayList<>();
+    private List<OrderItem> orderItems;
     private LocalDateTime createdAt;
-    @OneToOne
+    @OneToOne(fetch = FetchType.EAGER)
     private Payment payment;
     @PrePersist
     public void prePersist() {
