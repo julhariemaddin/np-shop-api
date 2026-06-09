@@ -5,6 +5,7 @@ import com.ecommerce.np_shop.dto.api.auth.LoginResponse;
 import com.ecommerce.np_shop.dto.api.auth.RegisterRequest;
 import com.ecommerce.np_shop.dto.api.auth.RegisterResponse;
 import com.ecommerce.np_shop.entity.Account;
+import com.ecommerce.np_shop.entity.Role;
 import com.ecommerce.np_shop.exception.customException.NpBadCredentialsException;
 import com.ecommerce.np_shop.repo.AccountRepository;
 import com.ecommerce.np_shop.repo.RoleRepository;
@@ -47,6 +48,7 @@ public class AuthService {
                 return LoginResponse.builder()
                         .token(jwtService.generateToken(new AccountDetails(account)))
                         .username(account.getUsername())
+                        .role(account.getRoles().stream().map(Role::getName).toList())
                         .email(account.getEmail())
                         .build();
             }

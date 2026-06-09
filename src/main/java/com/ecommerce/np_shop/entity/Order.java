@@ -25,10 +25,10 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "account_id")
     private Account account;
-    @OneToMany(mappedBy = "order")
+    @OneToMany(mappedBy = "order" , cascade =  CascadeType.ALL , orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItem> orderItems;
     private LocalDateTime createdAt;
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER , cascade = CascadeType.ALL , orphanRemoval = true)
     private Payment payment;
     @PrePersist
     public void prePersist() {

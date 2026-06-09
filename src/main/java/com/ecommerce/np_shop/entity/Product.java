@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -21,9 +23,13 @@ public class Product {
     private String description;
     private int stock;
     private double price;
-    @NonNull
-    private String imageUrl;
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+    @OneToMany(mappedBy = "product" , cascade = CascadeType.ALL,orphanRemoval = true)
+    private List<Image> images = new ArrayList<>();
+    public void addImage(Image image) {
+        images.add(image);
+        image.setProduct(this);
+    }
 }

@@ -25,11 +25,11 @@ public class OrderController {
         return ResponseEntity.ok().body(orderService.getOrders(checkAccountAndGetId(authentication)));
     }
     @GetMapping("/order/{id}")
-    public ResponseEntity<?> getOrder(Authentication authentication, @PathVariable UUID orderId){
+    public ResponseEntity<?> getOrder(Authentication authentication, @PathVariable(name = "id") UUID orderId){
         return ResponseEntity.ok().body(orderService.getOrder(checkAccountAndGetId(authentication),orderId));
     }
     @DeleteMapping("/order/{id}")
-    public ResponseEntity<?> deleteOrder(Authentication authentication, @PathVariable UUID orderId){
+    public ResponseEntity<?> deleteOrder(Authentication authentication, @PathVariable(name = "id") UUID orderId){
         orderService.deleteOrder(checkAccountAndGetId(authentication),orderId);
         return ResponseEntity.ok("Successfully deleted order");
     }

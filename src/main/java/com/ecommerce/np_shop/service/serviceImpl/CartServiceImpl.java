@@ -4,6 +4,7 @@ import com.ecommerce.np_shop.dto.api.v1.Cart;
 import com.ecommerce.np_shop.dto.api.v1.CartItem;
 import com.ecommerce.np_shop.dto.api.v1.CartItemRequest;
 import com.ecommerce.np_shop.entity.Product;
+import com.ecommerce.np_shop.repo.ProductRepository;
 import com.ecommerce.np_shop.service.CartService;
 import java.time.Duration;
 import java.util.UUID;
@@ -19,6 +20,7 @@ public class CartServiceImpl implements CartService {
   private final String CART_PREFIX = "cart:";
   private final Duration duration = Duration.ofMinutes(30);
   private final ProductServiceImpl productService;
+  private final ProductRepository  productRepository;
 
   @Override
   @PreAuthorize("hasRole('USER')")
@@ -47,11 +49,17 @@ public class CartServiceImpl implements CartService {
         .findFirst()
         .ifPresentOrElse(
             item ->
-                item.setProductQuantity(
-                    item.getProductQuantity() + cartItemRequest.getProductQuantity()),
+            {
+               if((cartItemRequest.getProductQuantity() + item.getProductQuantity()) > product.getStock()){
+                 throw new RuntimeException("Out of Stock");
+               }else {
+                 item.setProductQuantity(cartItemRequest.getProductQuantity() + item.getProductQuantity());
+               }
+            }
+                ,
             () ->
                 cart.getCartItemList()
-                    .add(
+       .add(
                         CartItem.builder()
                             .productName(product.getName())
                             .productId(product.getId())

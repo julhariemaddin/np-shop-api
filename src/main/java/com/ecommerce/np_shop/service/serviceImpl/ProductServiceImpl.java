@@ -1,14 +1,20 @@
 package com.ecommerce.np_shop.service.serviceImpl;
 
+import com.ecommerce.np_shop.dto.api.v1.ImageResponse;
 import com.ecommerce.np_shop.dto.api.v1.ProductRequest;
 import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
 import com.ecommerce.np_shop.entity.Category;
+import com.ecommerce.np_shop.entity.Image;
 import com.ecommerce.np_shop.entity.Product;
 import com.ecommerce.np_shop.repo.CategoryRepository;
+import com.ecommerce.np_shop.repo.ImageRepository;
 import com.ecommerce.np_shop.repo.ProductRepository;
 import com.ecommerce.np_shop.service.ProductService;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
 
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
+  private final ImageRepository imageRepository;
   private final String UPLOAD_ROOT_PATH = "upload";
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
@@ -68,7 +75,9 @@ public class ProductServiceImpl implements ProductService {
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
   public void deleteProduct(UUID productId) {
     Product product = checkProductExistsAndGetProduct(productId);
-    removeFile(product.getImageUrl());
+    for (Image image : product.getImages()) {
+      removeFile(image.getUrl());
+    }
     productRepository.deleteById(productId);
   }
 
@@ -81,7 +90,9 @@ public class ProductServiceImpl implements ProductService {
     newProduct.setDescription(product.getDescription());
     newProduct.setStock(product.getStock());
     newProduct.setPrice(product.getPrice());
-    newProduct.setImageUrl(getImageUrl(file));
+    Image image = getImage(file);
+    newProduct.addImage(image);
+    image.setProduct(newProduct);
     newProduct.setCategory(category);
     return productRepository.save(newProduct);
   }
@@ -99,12 +110,23 @@ public class ProductServiceImpl implements ProductService {
     newProduct.setStock(product.getStock());
     newProduct.setPrice(product.getPrice());
     if (file != null) {
-      String imageUrl = newProduct.getImageUrl();
-      removeFile(imageUrl);
-      newProduct.setImageUrl(getImageUrl(file));
+      Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
+      if(image == null) {
+        newProduct.addImage(getImage(file));
+      }
     }
     newProduct.setCategory(category);
     return productRepository.save(newProduct);
+  }
+
+  @Transactional
+  @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  public void deleteImage(UUID imageId) {
+    Image image =  imageRepository
+        .findById(imageId)
+        .orElseThrow(() -> new RuntimeException("Image not found"));
+    removeFile(image.getUrl());
+    imageRepository.delete(image);
   }
 
   public Product checkProductExistsAndGetProduct(UUID productId) {
@@ -120,9 +142,20 @@ public class ProductServiceImpl implements ProductService {
     productResponse.setDescription(savedProduct.getDescription());
     productResponse.setStock(savedProduct.getStock());
     productResponse.setPrice(savedProduct.getPrice());
-    productResponse.setImageUrl(savedProduct.getImageUrl());
+    productResponse.setImages(savedProduct.getImages().stream()
+                    .map(this::getImageResponse)
+            .toList());
     productResponse.setCategoryId(savedProduct.getCategory().getId());
     return productResponse;
+  }
+
+  private ImageResponse getImageResponse(Image image) {
+    return ImageResponse.builder()
+            .id(image.getId())
+            .url(image.getUrl())
+            .fileName(image.getFileName())
+            .contentType(image.getContentType())
+            .build();
   }
 
   private String getImageUrl(MultipartFile file) {
@@ -155,5 +188,24 @@ public class ProductServiceImpl implements ProductService {
   }
   public boolean checkProductStatus(UUID productId) {
     return  productRepository.existsById(productId);
+  }
+  private Image getImage(MultipartFile file) {
+    String originalFilename = file.getOriginalFilename();
+    String contentType = file.getContentType();
+    String url = getImageUrl(file);
+    Image image = new Image();
+    image.setUrl(url);
+    image.setFileName(originalFilename);
+    image.setContentType(contentType);
+    return image;
+  }
+
+  public Resource getImageResource(String url) throws MalformedURLException {
+    Path path = Paths.get(UPLOAD_ROOT_PATH + "/" +Paths.get(url));
+    Resource resource = new UrlResource(path.toUri());
+    if (!resource.exists() || !resource.isReadable()) {
+      throw new RuntimeException("Image not found");
+    }
+    return resource;
   }
 }

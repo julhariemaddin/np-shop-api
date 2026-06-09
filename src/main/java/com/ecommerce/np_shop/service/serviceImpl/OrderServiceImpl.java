@@ -48,11 +48,15 @@ public class OrderServiceImpl implements OrderService {
     }
     List<CartItem> cartItemList = cart.getCartItemList();
     for (CartItem cartItem : cartItemList) {
+      Product product = productRepository.findById(cartItem.getProductId()).orElseThrow(() -> new RuntimeException("No product found!"));
+      if(product.getStock() <= 0 || (product.getStock() < cartItem.getProductQuantity())){
+        throw new RuntimeException("Insufficient stock : " + product.getName() + " , Available Stock : " + product.getStock());
+      }
+      product.setStock(product.getStock()-cartItem.getProductQuantity());
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(order);
-      Product product = productRepository.findById(cartItem.getProductId()).orElse(null);
       orderItem.setProductId(cartItem.getProductId());
-      orderItem.setProductStatus(product != null);
+      orderItem.setProductStatus(true);
       orderItem.setPrice(cartItem.getProductPrice());
       orderItem.setQuantity(cartItem.getProductQuantity());
       order.setTotalItemsQuantity(order.getTotalItemsQuantity() + orderItem.getQuantity());
@@ -69,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @PreAuthorize("hasRole('USER')")
     public List<OrderResponse> getOrders(UUID userId) {
-        return orderRepository.findAll().stream().map(
+        return orderRepository.findByAccountId(userId).stream().map(
                 this::getOrderResponse
         ).toList();
     }

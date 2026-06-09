@@ -3,6 +3,8 @@ package com.ecommerce.np_shop.dto.api.v1;
 
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -15,6 +17,6 @@ public class ProductResponse {
     private String description;
     private int stock;
     private double price;
-    private String imageUrl;
+    private List<ImageResponse> images = new ArrayList<>();
     private UUID categoryId;
 }
