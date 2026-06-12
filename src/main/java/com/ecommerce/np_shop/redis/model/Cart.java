@@ -1,4 +1,4 @@
-package com.ecommerce.np_shop.dto.api.v1;
+package com.ecommerce.np_shop.redis.model;
 
 import lombok.Data;
 

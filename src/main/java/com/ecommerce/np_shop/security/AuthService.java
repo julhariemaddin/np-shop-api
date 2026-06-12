@@ -7,6 +7,7 @@ import com.ecommerce.np_shop.dto.api.auth.RegisterResponse;
 import com.ecommerce.np_shop.entity.Account;
 import com.ecommerce.np_shop.entity.Role;
 import com.ecommerce.np_shop.exception.customException.NpBadCredentialsException;
+import com.ecommerce.np_shop.redis.service.RefreshService;
 import com.ecommerce.np_shop.repo.AccountRepository;
 import com.ecommerce.np_shop.repo.RoleRepository;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ public class AuthService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshService refreshService;
     @Transactional
     public RegisterResponse register(RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
@@ -45,12 +47,14 @@ public class AuthService {
         }
         for(Account account : foundAccounts){
             if(passwordEncoder.matches(loginRequest.getPassword(), account.getPassword())){
-                return LoginResponse.builder()
+                LoginResponse loginResponse = LoginResponse.builder()
                         .token(jwtService.generateToken(new AccountDetails(account)))
                         .username(account.getUsername())
                         .role(account.getRoles().stream().map(Role::getName).toList())
                         .email(account.getEmail())
                         .build();
+                loginResponse.setRefreshToken(refreshService.getRefreshToken(account.getId(),loginResponse.getToken()));
+                return loginResponse;
             }
         }
         throw new NpBadCredentialsException("Bad Credentials");

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
 
@@ -52,6 +53,16 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
                 .signWith(SignatureAlgorithm.HS256, getSigningKey())
                 .compact();
+    }
+    public Instant getCreatedAt(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Date createdAt = claims.getIssuedAt();
+        return createdAt.toInstant();
+    }
+    public Instant getExpiration(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Date expiration = claims.getExpiration();
+        return expiration.toInstant();
     }
 
     public boolean isTokenValid(String token , AccountDetails accountDetails) {

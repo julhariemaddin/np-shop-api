@@ -56,7 +56,7 @@ public class SpringSecurityConfig {
                                  .requestMatchers("/api/v1/order/**").hasRole("USER")
                                  .requestMatchers(HttpMethod.DELETE,"/api/v1/image/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
-
+                                 .requestMatchers("/request/**").permitAll()
                                  .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilterChain, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

@@ -2,7 +2,7 @@ package com.ecommerce.np_shop.controller.api.v1;
 
 import com.ecommerce.np_shop.dto.api.v1.CartItemRequest;
 import com.ecommerce.np_shop.security.AccountDetails;
-import com.ecommerce.np_shop.service.CartService;
+import com.ecommerce.np_shop.redis.service.CartService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

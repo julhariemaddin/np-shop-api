@@ -1,13 +1,14 @@
-package com.ecommerce.np_shop.service.serviceImpl;
+package com.ecommerce.np_shop.redis.service.serviceImpl;
 
-import com.ecommerce.np_shop.dto.api.v1.Cart;
-import com.ecommerce.np_shop.dto.api.v1.CartItem;
+import com.ecommerce.np_shop.redis.model.Cart;
+import com.ecommerce.np_shop.redis.model.CartItem;
 import com.ecommerce.np_shop.dto.api.v1.CartItemRequest;
 import com.ecommerce.np_shop.entity.Product;
-import com.ecommerce.np_shop.repo.ProductRepository;
-import com.ecommerce.np_shop.service.CartService;
+import com.ecommerce.np_shop.redis.service.CartService;
 import java.time.Duration;
 import java.util.UUID;
+
+import com.ecommerce.np_shop.service.serviceImpl.ProductServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +21,6 @@ public class CartServiceImpl implements CartService {
   private final String CART_PREFIX = "cart:";
   private final Duration duration = Duration.ofMinutes(30);
   private final ProductServiceImpl productService;
-  private final ProductRepository  productRepository;
 
   @Override
   @PreAuthorize("hasRole('USER')")

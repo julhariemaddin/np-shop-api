@@ -1,6 +1,6 @@
-package com.ecommerce.np_shop.service;
+package com.ecommerce.np_shop.redis.service;
 
-import com.ecommerce.np_shop.dto.api.v1.Cart;
+import com.ecommerce.np_shop.redis.model.Cart;
 import com.ecommerce.np_shop.dto.api.v1.CartItemRequest;
 import org.springframework.stereotype.Service;
 

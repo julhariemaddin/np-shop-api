@@ -1,12 +1,12 @@
 package com.ecommerce.np_shop.serviceTest;
 
 
-import com.ecommerce.np_shop.dto.api.v1.Cart;
-import com.ecommerce.np_shop.dto.api.v1.CartItem;
+import com.ecommerce.np_shop.redis.model.Cart;
+import com.ecommerce.np_shop.redis.model.CartItem;
 import com.ecommerce.np_shop.dto.api.v1.CartItemRequest;
 import com.ecommerce.np_shop.entity.Category;
 import com.ecommerce.np_shop.entity.Product;
-import com.ecommerce.np_shop.service.serviceImpl.CartServiceImpl;
+import com.ecommerce.np_shop.redis.service.serviceImpl.CartServiceImpl;
 import com.ecommerce.np_shop.service.serviceImpl.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
