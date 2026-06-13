@@ -10,17 +10,20 @@ import com.ecommerce.np_shop.repo.CategoryRepository;
 import com.ecommerce.np_shop.repo.ImageRepository;
 import com.ecommerce.np_shop.repo.ProductRepository;
 import com.ecommerce.np_shop.service.ProductService;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,8 +61,8 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public List<ProductResponse> getProducts() {
-    return productRepository.findAll().stream().map(this::getProductResponse).toList();
+  public Page<ProductResponse> getProducts(Pageable pageable) {
+    return productRepository.findAll(pageable).map(this::getProductResponse);
   }
 
   @Override
@@ -142,6 +145,7 @@ public class ProductServiceImpl implements ProductService {
     productResponse.setDescription(savedProduct.getDescription());
     productResponse.setStock(savedProduct.getStock());
     productResponse.setPrice(savedProduct.getPrice());
+    productResponse.setCreatedAt(savedProduct.getCreatedAt());
     productResponse.setImages(savedProduct.getImages().stream()
                     .map(this::getImageResponse)
             .toList());

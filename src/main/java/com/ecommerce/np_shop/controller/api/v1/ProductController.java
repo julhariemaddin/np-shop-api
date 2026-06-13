@@ -5,12 +5,15 @@ import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
 import com.ecommerce.np_shop.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -31,8 +34,8 @@ public class ProductController {
   }
 
   @GetMapping("/product")
-  public ResponseEntity<List<ProductResponse>> getAllProducts() {
-    return ResponseEntity.ok(productService.getProducts());
+  public ResponseEntity<Page<ProductResponse>> getAllProducts(@PageableDefault(size = 15 , sort = "createdAt" , direction = Sort.Direction.DESC) Pageable pageable) {
+    return ResponseEntity.ok(productService.getProducts(pageable));
   }
 
   @GetMapping("/product/{id}")

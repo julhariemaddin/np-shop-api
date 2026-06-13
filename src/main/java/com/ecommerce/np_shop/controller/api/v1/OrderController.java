@@ -4,11 +4,14 @@ import com.ecommerce.np_shop.dto.api.v1.OrderResponse;
 import com.ecommerce.np_shop.security.AccountDetails;
 import com.ecommerce.np_shop.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,8 +24,8 @@ public class OrderController {
         return ResponseEntity.ok(orderService.createOrder(checkAccountAndGetId(authentication)));
     }
     @GetMapping("/order")
-    public ResponseEntity<List<OrderResponse>> getOrders(Authentication authentication){
-        return ResponseEntity.ok().body(orderService.getOrders(checkAccountAndGetId(authentication)));
+    public ResponseEntity<Page<OrderResponse>> getOrders(Authentication authentication , @PageableDefault(size = 5 , sort = "createdAt" , direction = Sort.Direction.DESC) Pageable pageable){
+        return ResponseEntity.ok(orderService.getOrders(checkAccountAndGetId(authentication), pageable));
     }
     @GetMapping("/order/{id}")
     public ResponseEntity<?> getOrder(Authentication authentication, @PathVariable(name = "id") UUID orderId){

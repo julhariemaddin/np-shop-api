@@ -16,6 +16,8 @@ import com.ecommerce.np_shop.service.PaymentService;
 import com.ecommerce.np_shop.service.ProductService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -74,10 +76,10 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @PreAuthorize("hasRole('USER')")
-    public List<OrderResponse> getOrders(UUID userId) {
-        return orderRepository.findByAccountId(userId).stream().map(
+    public Page<OrderResponse> getOrders(UUID userId , Pageable pageable) {
+        return orderRepository.findByAccountId(userId,pageable).map(
                 this::getOrderResponse
-        ).toList();
+        );
     }
 
     @Override

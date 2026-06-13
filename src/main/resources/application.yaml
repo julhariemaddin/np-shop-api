@@ -23,3 +23,8 @@ jwt:
   expiration : 900000
 base:
   api: /api/v1
+paypal:
+  client:
+    id: ARl_OI-bRaQXUHBjYwhoiIKv9UYv33biCCBr6ufJaMQLvobnRvWKvVXceSYknIP4SzFTU2IRsyfOkq6o
+    secret: EIFEA-HfxAD9fFUMWBgr1zk5y9qmGL3o8ryqN5i-WISwTLsf__5bbjWsl-yf2pi-_FIlk7MGTHkuII1V
+  mode: sandbox

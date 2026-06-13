@@ -3,6 +3,7 @@ package com.ecommerce.np_shop.dto.api.v1;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -14,6 +15,7 @@ public class OrderItemRespond {
     private Boolean productStatus;
     private int quantity;
     private double price;
+    private LocalDateTime createdAt;
 
     public double getTotalPrice() {
         return price * quantity;

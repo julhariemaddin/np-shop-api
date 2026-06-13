@@ -1,6 +1,8 @@
 package com.ecommerce.np_shop.repo;
 
 import com.ecommerce.np_shop.entity.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,5 +14,5 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByIdAndAccountId(UUID orderId,UUID accountId);
 
-    List<Order> findByAccountId(UUID userId);
+    Page<Order> findByAccountId(UUID userId , Pageable pageable);
 }

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class Order {
     private LocalDateTime createdAt;
     @OneToOne(fetch = FetchType.EAGER , cascade = CascadeType.ALL , orphanRemoval = true)
     private Payment payment;
+    private String status;
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
