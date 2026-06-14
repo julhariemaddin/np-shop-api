@@ -4,6 +4,8 @@ import com.ecommerce.np_shop.dto.api.v1.*;
 import com.ecommerce.np_shop.entity.Order;
 import com.ecommerce.np_shop.entity.OrderItem;
 import com.ecommerce.np_shop.entity.Product;
+import com.ecommerce.np_shop.enums.OrderStatus;
+import com.ecommerce.np_shop.enums.PaymentStatus;
 import com.ecommerce.np_shop.redis.model.Cart;
 import com.ecommerce.np_shop.redis.model.CartItem;
 import com.ecommerce.np_shop.repo.AccountRepository;
@@ -18,9 +20,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +33,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
+  private final RedisTemplate<String, Object> redisTemplate;
   private final OrderItemRepository orderItemRepository;
   private final CartService cartService;
   private final ProductRepository productRepository;
@@ -56,7 +62,7 @@ public class OrderServiceImpl implements OrderService {
       if(product.getStock() <= 0 || (product.getStock() < cartItem.getProductQuantity())){
         throw new RuntimeException("Insufficient stock : " + product.getName() + " , Available Stock : " + product.getStock());
       }
-      product.setStock(product.getStock()-cartItem.getProductQuantity());
+      product.setReserveStock(product.getReserveStock() + cartItem.getProductQuantity());
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(order);
       orderItem.setProductId(cartItem.getProductId());
@@ -69,9 +75,11 @@ public class OrderServiceImpl implements OrderService {
     }
     order.setOrderItems(orderItems);
     order.setPayment(paymentService.createPayment(order));
-    Order savedOrder = orderRepository.save(order);
-    cartService.deleteCart(savedOrder.getAccount().getId());
-    return getOrderResponse(savedOrder);
+    order.setStatus(OrderStatus.PENDING_PAYMENT.toString());
+    order.setExpiredAt(Instant.now().plus(Duration.ofMinutes(15)));
+    Order saveOrder =  orderRepository.save(order);
+    cartService.deleteCart(saveOrder.getAccount().getId());
+    return getOrderResponse(saveOrder);
   }
 
     @Override

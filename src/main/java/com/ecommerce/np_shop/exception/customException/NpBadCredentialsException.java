@@ -1,6 +1,6 @@
 package com.ecommerce.np_shop.exception.customException;
 
-public class NpBadCredentialsException extends Exception{
+public class NpBadCredentialsException extends CustomException{
     public NpBadCredentialsException(String message) {
         super(message);
     }

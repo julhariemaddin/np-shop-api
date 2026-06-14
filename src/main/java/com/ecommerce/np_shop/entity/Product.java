@@ -23,6 +23,7 @@ public class Product {
     @NonNull
     private String description;
     private int stock;
+    private int reserveStock;
     private double price;
     private LocalDateTime createdAt;
     @PrePersist
@@ -37,5 +38,8 @@ public class Product {
     public void addImage(Image image) {
         images.add(image);
         image.setProduct(this);
+    }
+    public int getStock(){
+        return stock - reserveStock;
     }
 }

@@ -2,6 +2,7 @@ package com.ecommerce.np_shop.service.serviceImpl;
 
 import com.ecommerce.np_shop.entity.Order;
 import com.ecommerce.np_shop.entity.Payment;
+import com.ecommerce.np_shop.enums.PaymentStatus;
 import com.ecommerce.np_shop.repo.PaymentRepository;
 import com.ecommerce.np_shop.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ public class PaymentServiceImpl implements PaymentService {
     Payment payment = new Payment();
     payment.setOrder(order);
     payment.setTotalPrice(order.getTotalPrice());
-    payment.setStatus("Paid");
+    payment.setStatus(PaymentStatus.PENDING_PAYMENT.toString());
     return paymentRepository.save(payment);
   }
 }

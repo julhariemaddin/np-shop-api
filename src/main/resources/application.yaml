@@ -24,6 +24,8 @@ jwt:
 base:
   api: /api/v1
 paypal:
+  return-url : https://drainable-unplanted-alive.ngrok-free.dev/api/paypal/capture
+  cancel-url : https://drainable-unplanted-alive.ngrok-free.dev/api/paypal/cancel
   client:
     id: ARl_OI-bRaQXUHBjYwhoiIKv9UYv33biCCBr6ufJaMQLvobnRvWKvVXceSYknIP4SzFTU2IRsyfOkq6o
     secret: EIFEA-HfxAD9fFUMWBgr1zk5y9qmGL3o8ryqN5i-WISwTLsf__5bbjWsl-yf2pi-_FIlk7MGTHkuII1V

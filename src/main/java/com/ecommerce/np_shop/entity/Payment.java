@@ -17,6 +17,7 @@ public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+    private String paymentId;
     @OneToOne
     private Order order;
     private String status;
