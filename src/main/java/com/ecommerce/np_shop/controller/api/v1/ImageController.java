@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.Resource;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.net.MalformedURLException;
@@ -25,5 +26,9 @@ public class ImageController {
     public ResponseEntity<Resource> getImage(@PathVariable String url) throws MalformedURLException {
         String contentType = "application/octet-stream";
     return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).body(productService.getImageResource(url));
+    }
+    @PostMapping("/image/{id}")
+    public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file , @PathVariable(name = "id") UUID productId){
+        return ResponseEntity.ok(productService.addImage(file,productId));
     }
 }

@@ -16,4 +16,6 @@ public interface ProductService {
      ProductResponse getProduct(UUID productId);
      void deleteProduct(UUID productId);
      boolean checkProductStatus(UUID productId);
+     ProductResponse addImage(MultipartFile file , UUID productId);
+
 }

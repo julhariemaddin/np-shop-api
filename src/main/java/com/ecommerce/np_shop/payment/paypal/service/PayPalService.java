@@ -165,6 +165,11 @@ public class PayPalService {
   public PaymentResponse cancelPayment(String paypalId) {
     Order order = orderRepository.findByPaymentPaymentId(paypalId);
     order.getPayment().setStatus(PaymentStatus.CANCEL.toString());
+    order.getOrderItems().forEach(orderItem -> {
+      Product product  = productRepository.getById(orderItem.getProductId());
+      product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
+      productRepository.save(product);
+    });
     order.setStatus(OrderStatus.CANCELLED.toString());
     orderRepository.save(order);
     return PaymentResponse.builder()

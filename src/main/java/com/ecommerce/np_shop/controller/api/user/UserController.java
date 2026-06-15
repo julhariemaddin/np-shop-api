@@ -25,6 +25,7 @@ public class UserController {
   public ResponseEntity<ApiResponse<UpdateProfileResponse>> updateProfile(
       Authentication authentication,
       @Valid @RequestBody UpdateProfileRequest updateProfileRequest) {
+    System.out.println("Profile update");
     UpdateProfileResponse updateProfileResponse =
         userService.updateProfileAndGetResponse(
             authenticationExtractorUtil.getAccountId(authentication), updateProfileRequest);

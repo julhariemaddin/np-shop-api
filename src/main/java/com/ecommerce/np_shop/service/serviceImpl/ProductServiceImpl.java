@@ -17,12 +17,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -61,6 +59,12 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  public ProductResponse addImage(MultipartFile file , UUID productId){
+    return getProductResponse(addImageToProduct(file,productId));
+  }
+
+  @Override
   public Page<ProductResponse> getProducts(Pageable pageable) {
     return productRepository.findAll(pageable).map(this::getProductResponse);
   }
@@ -84,6 +88,26 @@ public class ProductServiceImpl implements ProductService {
     productRepository.deleteById(productId);
   }
 
+
+  @Transactional
+  @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  public Product addImageToProduct(
+          MultipartFile file, UUID productId) {
+    if(file.isEmpty()) throw new RuntimeException("Image file is empty");
+    Product newProduct =
+            productRepository
+                    .findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+      Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
+      if(image == null) {
+        newProduct.addImage(getImage(file));
+      }else{
+        throw new RuntimeException("Image already exists");
+      }
+    return productRepository.save(newProduct);
+  }
+
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
   public Product createAndSaveProduct(
@@ -94,6 +118,7 @@ public class ProductServiceImpl implements ProductService {
     newProduct.setStock(product.getStock());
     newProduct.setPrice(product.getPrice());
     Image image = getImage(file);
+    newProduct.setMainImageUrl(image.getUrl());
     newProduct.addImage(image);
     image.setProduct(newProduct);
     newProduct.setCategory(category);
@@ -115,7 +140,10 @@ public class ProductServiceImpl implements ProductService {
     if (file != null) {
       Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
       if(image == null) {
-        newProduct.addImage(getImage(file));
+        Image newImage = getImage(file);
+        removeFile(newProduct.getMainImageUrl());
+        newProduct.setMainImageUrl(newImage.getUrl());
+        newProduct.addImage(newImage);
       }
     }
     newProduct.setCategory(category);
@@ -146,7 +174,16 @@ public class ProductServiceImpl implements ProductService {
     productResponse.setStock(savedProduct.getStock());
     productResponse.setPrice(savedProduct.getPrice());
     productResponse.setCreatedAt(savedProduct.getCreatedAt());
+    Image mainImage = savedProduct.getImages().stream()
+            .filter(image -> image.getUrl().equals(savedProduct.getMainImageUrl()))
+            .findFirst().orElse(null);
+    if(mainImage == null) {
+      mainImage = savedProduct.getImages().getFirst();
+      savedProduct.setMainImageUrl(mainImage.getUrl());
+    }
+    productResponse.setMainImage(getImageResponse(mainImage));
     productResponse.setImages(savedProduct.getImages().stream()
+                    .filter(image -> !image.getUrl().equals(savedProduct.getMainImageUrl()))
                     .map(this::getImageResponse)
             .toList());
     productResponse.setCategoryId(savedProduct.getCategory().getId());

@@ -35,6 +35,7 @@ public class Product {
     private Category category;
     @OneToMany(mappedBy = "product" , cascade = CascadeType.ALL,orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
+    private String mainImageUrl;
     public void addImage(Image image) {
         images.add(image);
         image.setProduct(this);

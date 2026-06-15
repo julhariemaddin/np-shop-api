@@ -55,6 +55,7 @@ public class SpringSecurityConfig {
                                  .requestMatchers("/api/v1/cart/**").hasRole("USER")
                                  .requestMatchers("/api/v1/order/**").hasRole("USER")
                                  .requestMatchers(HttpMethod.DELETE,"/api/v1/image/**").hasAnyRole("ADMIN","SUPER_ADMIN")
+                                 .requestMatchers(HttpMethod.POST,"/api/v1/image/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers("/request/**").permitAll()
                                  .requestMatchers("/api/paypal/**").permitAll()
@@ -68,7 +69,7 @@ public class SpringSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of("http://localhost:5173")); // your frontend
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS" ,"PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -29,7 +29,7 @@ public class UserServiceImpl implements UserService {
             account.setUsername(updateProfileRequest.getUsername());
         }
         if(updateProfileRequest.getEmail() != null){
-            account.setUsername(updateProfileRequest.getEmail());
+            account.setEmail(updateProfileRequest.getEmail());
         }
         Account savedAccount = accountRepository.save(account);
         return new UpdateProfileResponse(savedAccount.getUsername(),account.getEmail());

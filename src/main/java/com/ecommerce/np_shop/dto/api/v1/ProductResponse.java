@@ -18,6 +18,7 @@ public class ProductResponse {
     private String description;
     private int stock;
     private double price;
+    private ImageResponse mainImage;
     private List<ImageResponse> images = new ArrayList<>();
     private UUID categoryId;
     private LocalDateTime createdAt;
