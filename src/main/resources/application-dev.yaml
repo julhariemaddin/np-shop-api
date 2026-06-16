@@ -1,10 +1,10 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/mydb
-    username: admin
-    password: password
+    url: ${DEV_JDBC_POSTGRES_DB}
+    username: ${DEV_POSTGRES_USERNAME}
+    password: ${DEV_POSTGRES_PASSWORD}
   data:
     redis:
       host: Localhost
       port: 6379
-      password: StrongPassword
+      password: ${DEV_REDIS_PASSWORD}

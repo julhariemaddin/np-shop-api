@@ -37,6 +37,10 @@ public class ProductController {
   public ResponseEntity<Page<ProductResponse>> getAllProducts(@PageableDefault(size = 15 , sort = "createdAt" , direction = Sort.Direction.DESC) Pageable pageable) {
     return ResponseEntity.ok(productService.getProducts(pageable));
   }
+  @GetMapping("/product/search/{keyword}")
+  public ResponseEntity<Page<ProductResponse>> productSearch(@PageableDefault(size = 15 , sort = "createdAt" , direction = Sort.Direction.DESC) Pageable pageable , @PathVariable(name = "keyword")  String keyword) {
+    return ResponseEntity.ok(productService.search(pageable, keyword));
+  }
 
   @GetMapping("/product/{id}")
   public ResponseEntity<?> getProduct(@PathVariable(name = "id") UUID productId) {

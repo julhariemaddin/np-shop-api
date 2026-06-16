@@ -17,5 +17,5 @@ public interface ProductService {
      void deleteProduct(UUID productId);
      boolean checkProductStatus(UUID productId);
      ProductResponse addImage(MultipartFile file , UUID productId);
-
+     Page<ProductResponse> search(Pageable pageable , String keyword);
 }

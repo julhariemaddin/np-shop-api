@@ -55,7 +55,7 @@ public class ProductServiceImpl implements ProductService {
         categoryRepository
             .findById(productRequest.getCategoryId())
             .orElseThrow(() -> new RuntimeException("Category not found"));
-    return getProductResponse(createAndSaveProduct(productRequest, file, category, productId));
+    return getProductResponse(updateAndSaveProduct(productRequest, file, category, productId));
   }
 
   @Override
@@ -100,6 +100,9 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
       Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
+      if(newProduct.getImages().size()>5){
+        throw new RuntimeException("Image upload max reached");
+      }
       if(image == null) {
         newProduct.addImage(getImage(file));
       }else{
@@ -127,7 +130,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  public Product createAndSaveProduct(
+  public Product updateAndSaveProduct(
       ProductRequest product, MultipartFile file, Category category, UUID productId) {
     Product newProduct =
         productRepository
@@ -135,6 +138,9 @@ public class ProductServiceImpl implements ProductService {
             .orElseThrow(() -> new RuntimeException("Product not found"));
     newProduct.setName(product.getName());
     newProduct.setDescription(product.getDescription());
+    if(newProduct.getReserveStock() > product.getStock()){
+      throw new RuntimeException("Insufficient stock , cause there's a reserve stock for incoming payments");
+    }
     newProduct.setStock(product.getStock());
     newProduct.setPrice(product.getPrice());
     if (file != null) {
@@ -248,5 +254,8 @@ public class ProductServiceImpl implements ProductService {
       throw new RuntimeException("Image not found");
     }
     return resource;
+  }
+  public Page<ProductResponse> search(Pageable pageable , String keyword) {
+    return productRepository.search(keyword, pageable).map(this::getProductResponse);
   }
 }

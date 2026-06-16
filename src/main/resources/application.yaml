@@ -19,14 +19,14 @@ server:
   port: 8080
 
 jwt:
-  secret: a7f3k9mX2pQwR8vL5nJcYdEhBuTsGiZoA4eN6WqC1xDyPmFjKrHbVgUlSt0Owz
-  expiration : 900000
+  secret: ${JWT_SECRET}
+  expiration : ${JWT_TOKEN_EXPIRATION}
 base:
   api: /api/v1
 paypal:
-  return-url : https://drainable-unplanted-alive.ngrok-free.dev/api/paypal/capture
-  cancel-url : https://drainable-unplanted-alive.ngrok-free.dev/api/paypal/cancel
+  return-url : ${PAYPAL_RETURN_URL}
+  cancel-url : ${PAYPAL_CANCEL_URL}
   client:
-    id: ARl_OI-bRaQXUHBjYwhoiIKv9UYv33biCCBr6ufJaMQLvobnRvWKvVXceSYknIP4SzFTU2IRsyfOkq6o
-    secret: EIFEA-HfxAD9fFUMWBgr1zk5y9qmGL3o8ryqN5i-WISwTLsf__5bbjWsl-yf2pi-_FIlk7MGTHkuII1V
-  mode: sandbox
+    id: ${PAYPAL_CLIENT_ID}
+    secret: ${PAYPAL_CLIENT_SECRET}
+  mode: ${PAYPAL_MODE}

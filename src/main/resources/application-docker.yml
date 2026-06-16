@@ -1,10 +1,10 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/mydb
-    username: admin
-    password: password
+    url: ${DOCK_JDBC_POSTGRES_DB}
+    username: ${DOCK_POSTGRES_USERNAME}
+    password: ${DOCK_POSTGRES_PASSWORD}
   data:
     redis:
       host: redis
       port: 6379
-      password: StrongPassword
+      password: ${DOCK_REDIS_PASSWORD}

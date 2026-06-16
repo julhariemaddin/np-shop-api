@@ -43,7 +43,9 @@ public class SpringSecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
-                         authorizeRequests.requestMatchers("/api/auth/**").permitAll()
+                         authorizeRequests
+                                 .requestMatchers(HttpMethod.OPTIONS, "/").permitAll()
+                                 .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/category/**").permitAll()
                                  .requestMatchers(HttpMethod.POST,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.PUT,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
@@ -59,6 +61,7 @@ public class SpringSecurityConfig {
                                  .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers("/request/**").permitAll()
                                  .requestMatchers("/api/paypal/**").permitAll()
+                                 .requestMatchers("/api/webhook/**").permitAll()
                                  .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilterChain, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
@@ -68,10 +71,10 @@ public class SpringSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173")); // your frontend
+        config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of("http://localhost:5173","https://np-shop-frontend.vercel.app")); // your frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS" ,"PATCH"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

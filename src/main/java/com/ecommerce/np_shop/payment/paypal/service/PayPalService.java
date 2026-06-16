@@ -114,7 +114,7 @@ public class PayPalService {
                   .findById(orderItem.getProductId())
                   .orElseThrow(() -> new RuntimeException("Product not found"));
           if (product.getReserveStock() < orderItem.getQuantity()) {
-            throw new RuntimeException("Product reserve error");
+            throw new RuntimeException("Product Reserve is insufficient");
           }
           product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
           product.setStock(product.getStock() - orderItem.getQuantity());
@@ -164,9 +164,13 @@ public class PayPalService {
   @Transactional
   public PaymentResponse cancelPayment(String paypalId) {
     Order order = orderRepository.findByPaymentPaymentId(paypalId);
+    if(PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())) {
+      throw new RuntimeException("Payment is already paid");
+    }
     order.getPayment().setStatus(PaymentStatus.CANCEL.toString());
     order.getOrderItems().forEach(orderItem -> {
       Product product  = productRepository.getById(orderItem.getProductId());
+      if(product.getReserveStock() < orderItem.getQuantity()) throw new RuntimeException("Product reserve error");
       product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
       productRepository.save(product);
     });
