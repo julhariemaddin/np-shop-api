@@ -19,8 +19,7 @@ target/
 *.iml
 *.ipr
 
-### dev properties ###
-application-dev.yaml
+
 
 ### Upload Files ###
 upload/

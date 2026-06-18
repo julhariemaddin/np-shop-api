@@ -9,33 +9,43 @@ import com.ecommerce.np_shop.payment.dto.PaymentRequest;
 import com.ecommerce.np_shop.payment.dto.PaymentResponse;
 import com.ecommerce.np_shop.repo.OrderRepository;
 import com.ecommerce.np_shop.repo.ProductRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paypal.sdk.PaypalServerSdkClient;
 import com.paypal.sdk.exceptions.ApiException;
 import com.paypal.sdk.models.*;
-import jakarta.transaction.Transactional;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PayPalService {
   private final OrderRepository orderRepository;
   private final PaypalServerSdkClient paypalServerSdkClient;
   private final ProductRepository productRepository;
-
+  private final PayPalAuthService payPalAuthService;
+  private final HttpClient httpClient = HttpClient.newHttpClient();
+  private final ObjectMapper objectMapper = new ObjectMapper();
   @Value("${paypal.return-url}")
   private String returnUrl;
 
   @Value("${paypal.cancel-url}")
   private String cancelUrl;
 
-  @Transactional
+
   public PaymentResponse payment(PaymentRequest paymentRequest, UUID userId) {
     try {
       Order order =
@@ -78,6 +88,14 @@ public class PayPalService {
               .map(LinkDescription::getHref)
               .orElseThrow(() -> new RuntimeException("Order approval url not found"));
 
+      order.getOrderItems().forEach(orderItem -> {
+        Product product = productRepository.findById(orderItem.getProductId()).orElseThrow(() -> new RuntimeException("No product found!"));
+        if(product.getStock() <= 0 || (product.getStock() < orderItem.getQuantity())){
+          throw new RuntimeException("Insufficient stock : " + product.getName() + " , Available Stock : " + product.getStock());
+        }
+        product.setReserveStock(product.getReserveStock() + orderItem.getQuantity());
+        productRepository.save(product);
+      });
       order.getPayment().setStatus(PaymentStatus.PROCESSING.toString());
       order.getPayment().setPaymentId(paypalOrder.getId());
       order.setStatus(OrderStatus.PAYMENT_PROCESSING.toString());
@@ -94,13 +112,15 @@ public class PayPalService {
     }
   }
 
-  @Transactional
+
   public PaymentResponse capturePayment(String paypalId) {
     String paymentId;
     String status;
+    if("COMPLETED".equals(getOrderStatus(paypalId))){
+      return PaymentResponse.builder().paymentId(paypalId).paymentStatus("COMPLETED").build();
+    }
     try {
       CaptureOrderInput captureInput = new CaptureOrderInput.Builder(paypalId, null).build();
-
       com.paypal.sdk.models.Order captureOrder =
           paypalServerSdkClient.getOrdersController().captureOrder(captureInput).getResult();
       status = captureOrder.getStatus().toString();
@@ -154,18 +174,20 @@ public class PayPalService {
       orderRepository.save(order);
       message = "Order Not Approved";
     }
-    return message.isEmpty() ? "Payments is processing please try again" : message;
+    return message.isEmpty() ? apiException.getMessage() : message;
   }
 
   private Order getOrderByPaymentId(String paymentId) {
     return orderRepository.findByPaymentPaymentId(paymentId);
   }
 
-  @Transactional
   public PaymentResponse cancelPayment(String paypalId) {
     Order order = orderRepository.findByPaymentPaymentId(paypalId);
     if(PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())) {
       throw new RuntimeException("Payment is already paid");
+    }
+    if(PaymentStatus.CANCEL.toString().equals(order.getPayment().getStatus())) {
+      throw new RuntimeException("Payment is already cancelled");
     }
     order.getPayment().setStatus(PaymentStatus.CANCEL.toString());
     order.getOrderItems().forEach(orderItem -> {
@@ -180,5 +202,22 @@ public class PayPalService {
         .paymentId(paypalId)
         .paymentStatus(order.getPayment().getStatus())
         .build();
+  }
+
+
+  public String getOrderStatus(String paypalId) {
+    try{
+      HttpRequest request = HttpRequest.newBuilder()
+              .uri(URI.create(payPalAuthService.getBaseUrl() + "/v2/checkout/orders/" + paypalId))
+              .header("Authorization", "Bearer " + payPalAuthService.getAccessToken())
+              .GET()
+              .build();
+
+      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      JsonNode responseBody = objectMapper.readTree(response.body());
+      return responseBody.path("status").asText(null);
+    }catch (Exception e){
+      throw new RuntimeException(String.format("Failed to get Order Status : [error-message : %s]",e.getMessage()));
+    }
   }
 }

@@ -60,7 +60,6 @@ public class CartServiceTest {
         product.setStock(2);
         product.setDescription("test");
         product.setPrice(900);
-        product.setImageUrl("test");
 
         product2 = new Product();
         product2.setCategory(category);
@@ -69,7 +68,6 @@ public class CartServiceTest {
         product2.setStock(2);
         product2.setDescription("test");
         product2.setPrice(900);
-        product2.setImageUrl("test");
 
 
         CartItem item = CartItem.builder()

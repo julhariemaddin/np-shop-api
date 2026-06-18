@@ -6,5 +6,6 @@ public enum PaymentStatus {
     PENDING_PAYMENT,
     CANCEL,
     PROCESSING,
+    APPROVED,
     TIMEOUT,
 }

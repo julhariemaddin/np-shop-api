@@ -14,13 +14,14 @@ public class PaypalConfig {
     private String clientId;
     @Value("${paypal.client.secret}")
     private String secret;
-
+    @Value("${paypal.is.sandbox}")
+    private boolean sandbox;
     @Bean
     public PaypalServerSdkClient paypalServerSdkClient() {
         return new PaypalServerSdkClient.Builder()
                 .clientCredentialsAuth(
                         new ClientCredentialsAuthModel.Builder(clientId,secret).build()
-                ).environment(Environment.SANDBOX)
+                ).environment(sandbox ? Environment.SANDBOX : Environment.PRODUCTION)
                 .build();
     }
 }

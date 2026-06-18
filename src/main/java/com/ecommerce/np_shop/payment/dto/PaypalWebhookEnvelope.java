@@ -1,0 +1,15 @@
+package com.ecommerce.np_shop.payment.dto;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Data;
+
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class PaypalWebhookEnvelope {
+    @JsonProperty("event_type")
+    private String eventType;
+    @JsonProperty("resource")
+    private JsonNode resource;
+}

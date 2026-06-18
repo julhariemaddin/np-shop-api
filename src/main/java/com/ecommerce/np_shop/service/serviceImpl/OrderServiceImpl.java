@@ -20,7 +20,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +32,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
-  private final RedisTemplate<String, Object> redisTemplate;
   private final OrderItemRepository orderItemRepository;
   private final CartService cartService;
   private final ProductRepository productRepository;
@@ -58,11 +56,6 @@ public class OrderServiceImpl implements OrderService {
     }
     List<CartItem> cartItemList = cart.getCartItemList();
     for (CartItem cartItem : cartItemList) {
-      Product product = productRepository.findById(cartItem.getProductId()).orElseThrow(() -> new RuntimeException("No product found!"));
-      if(product.getStock() <= 0 || (product.getStock() < cartItem.getProductQuantity())){
-        throw new RuntimeException("Insufficient stock : " + product.getName() + " , Available Stock : " + product.getStock());
-      }
-      product.setReserveStock(product.getReserveStock() + cartItem.getProductQuantity());
       OrderItem orderItem = new OrderItem();
       orderItem.setOrder(order);
       orderItem.setProductId(cartItem.getProductId());
@@ -101,8 +94,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @PreAuthorize("hasRole('USER')")
+    @Transactional
     public void deleteOrder(UUID userId, UUID orderId) {
-      if (orderRepository.findByIdAndAccountId(orderId,userId).isPresent()) {
+    Order order = orderRepository.findByIdAndAccountId(orderId,userId).orElse(null);
+      if (order != null) {
+          if(!PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())){
+            order.getOrderItems().forEach(orderItem ->
+                productRepository.findById(orderItem.getProductId()).ifPresent(product -> product.setReserveStock(product.getReserveStock() - orderItem.getQuantity()))
+            );
+          }
           orderRepository.deleteById(orderId);
           return;
       }
@@ -112,6 +112,7 @@ public class OrderServiceImpl implements OrderService {
     private OrderResponse getOrderResponse(Order order) {
       return OrderResponse.builder()
               .orderId(order.getId())
+              .status(order.getStatus())
               .orderItems(
                       order.getOrderItems().stream()
                               .map(

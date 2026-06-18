@@ -44,7 +44,7 @@ public class SpringSecurityConfig {
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                          authorizeRequests
-                                 .requestMatchers(HttpMethod.OPTIONS, "/").permitAll()
+                                 .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/category/**").permitAll()
                                  .requestMatchers(HttpMethod.POST,"/api/v1/category/**").hasAnyRole("ADMIN","SUPER_ADMIN")
@@ -58,7 +58,6 @@ public class SpringSecurityConfig {
                                  .requestMatchers("/api/v1/order/**").hasRole("USER")
                                  .requestMatchers(HttpMethod.DELETE,"/api/v1/image/**").hasAnyRole("ADMIN","SUPER_ADMIN")
                                  .requestMatchers(HttpMethod.POST,"/api/v1/image/**").hasAnyRole("ADMIN","SUPER_ADMIN")
-                                 .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers("/request/**").permitAll()
                                  .requestMatchers("/api/paypal/**").permitAll()
                                  .requestMatchers("/api/webhook/**").permitAll()
@@ -72,7 +71,7 @@ public class SpringSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOrigins(List.of("http://localhost:5173","https://np-shop-frontend.vercel.app")); // your frontend
+        config.setAllowedOrigins(List.of("http://localhost:5173","https://np-shop-web.vercel.app")); // your frontend
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS" ,"PATCH"));
         config.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -29,4 +29,6 @@ paypal:
   client:
     id: ${PAYPAL_CLIENT_ID}
     secret: ${PAYPAL_CLIENT_SECRET}
-  mode: ${PAYPAL_MODE}
+  webhook:
+    id: ${PAYPAL_WEBHOOK_ID}
+  sandbox: ${PAYPAL_IS_SANDBOX}

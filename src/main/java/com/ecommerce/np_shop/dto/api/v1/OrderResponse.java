@@ -19,4 +19,5 @@ public class OrderResponse {
     private LocalDateTime createdAt;
     private PaymentRespond payment;
     private Double totalPrice;
+    private String status;
 }

@@ -100,7 +100,7 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
       Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
-      if(newProduct.getImages().size()>5){
+      if(newProduct.getImages().size()>=5){
         throw new RuntimeException("Image upload max reached");
       }
       if(image == null) {
