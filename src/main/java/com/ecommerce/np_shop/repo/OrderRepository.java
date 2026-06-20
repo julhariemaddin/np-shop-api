@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findByAccountId(UUID userId , Pageable pageable);
 
     @EntityGraph(attributePaths = "payment")
-    List<Order> findByStatusAndExpiredAtBefore(String status, Instant timeNow);
-
+    List<Order> findByStatusAndExpiredAtBefore(String status, Instant now);
+    @EntityGraph(attributePaths = "payment")
     Order findByPaymentPaymentId(String paypalId);
 }

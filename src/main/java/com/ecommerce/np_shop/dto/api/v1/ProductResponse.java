@@ -22,4 +22,6 @@ public class ProductResponse {
     private List<ImageResponse> images = new ArrayList<>();
     private UUID categoryId;
     private LocalDateTime createdAt;
+    private int numberOfReviews;
+    private double overAllRating;
 }

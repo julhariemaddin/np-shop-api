@@ -29,6 +29,7 @@ public class PaypalController {
     }
     @GetMapping("/cancel")
     public ResponseEntity<?> failed(@RequestParam("token" ) String paypalId) {
+        System.out.println("From Cancel paypalId: " + paypalId);
         return ResponseEntity.ok(paymentService.cancelPayment(paypalId));
     }
 }

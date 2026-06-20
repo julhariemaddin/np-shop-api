@@ -2,7 +2,10 @@ package com.ecommerce.np_shop.controller.api.v1;
 
 import com.ecommerce.np_shop.dto.api.v1.ProductRequest;
 import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
+import com.ecommerce.np_shop.dto.api.v1.ReviewRequest;
+import com.ecommerce.np_shop.dto.api.v1.ReviewResponse;
 import com.ecommerce.np_shop.service.ProductService;
+import com.ecommerce.np_shop.util.AuthenticationExtractorUtil;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -11,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +25,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class ProductController {
   private final ProductService productService;
+  private final AuthenticationExtractorUtil authenticationExtractorUtil = new  AuthenticationExtractorUtil();
 
   @PostMapping(value = "/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<?> addProduct(
@@ -45,6 +50,15 @@ public class ProductController {
   @GetMapping("/product/{id}")
   public ResponseEntity<?> getProduct(@PathVariable(name = "id") UUID productId) {
     return ResponseEntity.ok(productService.getProduct(productId));
+  }
+
+  @PostMapping("/product/review")
+  public ResponseEntity<?> reviewProduct(Authentication authentication, @RequestBody @Valid ReviewRequest reviewRequest) {
+    return ResponseEntity.ok(productService.postReview(authenticationExtractorUtil.getAccountId(authentication), reviewRequest));
+  }
+  @GetMapping("/product/review/{id}")
+  public ResponseEntity<Page<ReviewResponse>> getReviews(@PageableDefault(size = 15 , sort = "createdAt" , direction = Sort.Direction.DESC) Pageable pageable , @PathVariable(name = "id") UUID productId) {
+    return ResponseEntity.ok(productService.getReviews(pageable, productId));
   }
 
   @DeleteMapping("/product/{id}")

@@ -3,31 +3,28 @@ package com.ecommerce.np_shop.service.serviceImpl;
 import com.ecommerce.np_shop.dto.api.v1.*;
 import com.ecommerce.np_shop.entity.Order;
 import com.ecommerce.np_shop.entity.OrderItem;
-import com.ecommerce.np_shop.entity.Product;
 import com.ecommerce.np_shop.enums.OrderStatus;
-import com.ecommerce.np_shop.enums.PaymentStatus;
 import com.ecommerce.np_shop.redis.model.Cart;
 import com.ecommerce.np_shop.redis.model.CartItem;
+import com.ecommerce.np_shop.redis.service.CartService;
 import com.ecommerce.np_shop.repo.AccountRepository;
 import com.ecommerce.np_shop.repo.OrderItemRepository;
 import com.ecommerce.np_shop.repo.OrderRepository;
 import com.ecommerce.np_shop.repo.ProductRepository;
-import com.ecommerce.np_shop.redis.service.CartService;
 import com.ecommerce.np_shop.service.OrderService;
 import com.ecommerce.np_shop.service.PaymentService;
 import com.ecommerce.np_shop.service.ProductService;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -69,7 +66,7 @@ public class OrderServiceImpl implements OrderService {
     order.setOrderItems(orderItems);
     order.setPayment(paymentService.createPayment(order));
     order.setStatus(OrderStatus.PENDING_PAYMENT.toString());
-    order.setExpiredAt(Instant.now().plus(Duration.ofMinutes(15)));
+    order.setExpiredAt(Instant.now().plus(Duration.ofSeconds(1)));
     Order saveOrder =  orderRepository.save(order);
     cartService.deleteCart(saveOrder.getAccount().getId());
     return getOrderResponse(saveOrder);
@@ -98,11 +95,7 @@ public class OrderServiceImpl implements OrderService {
     public void deleteOrder(UUID userId, UUID orderId) {
     Order order = orderRepository.findByIdAndAccountId(orderId,userId).orElse(null);
       if (order != null) {
-          if(!PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())){
-            order.getOrderItems().forEach(orderItem ->
-                productRepository.findById(orderItem.getProductId()).ifPresent(product -> product.setReserveStock(product.getReserveStock() - orderItem.getQuantity()))
-            );
-          }
+
           orderRepository.deleteById(orderId);
           return;
       }

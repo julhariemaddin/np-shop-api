@@ -1,5 +1,6 @@
 package com.ecommerce.np_shop.repo;
 
+import com.ecommerce.np_shop.dto.api.v1.ReviewResponse;
 import com.ecommerce.np_shop.entity.Product;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -25,4 +27,5 @@ WHERE
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
 }

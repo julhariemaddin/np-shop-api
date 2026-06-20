@@ -3,6 +3,9 @@ package com.ecommerce.np_shop.service;
 import com.ecommerce.np_shop.dto.api.v1.ProductRequest;
 import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
 import java.util.UUID;
+
+import com.ecommerce.np_shop.dto.api.v1.ReviewRequest;
+import com.ecommerce.np_shop.dto.api.v1.ReviewResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,4 +21,6 @@ public interface ProductService {
      boolean checkProductStatus(UUID productId);
      ProductResponse addImage(MultipartFile file , UUID productId);
      Page<ProductResponse> search(Pageable pageable , String keyword);
+     ReviewResponse postReview(UUID accountId , ReviewRequest reviewRequest);
+     Page<ReviewResponse> getReviews(Pageable pageable , UUID productId);
 }

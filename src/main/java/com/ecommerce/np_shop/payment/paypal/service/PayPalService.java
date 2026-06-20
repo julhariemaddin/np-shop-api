@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paypal.sdk.PaypalServerSdkClient;
 import com.paypal.sdk.exceptions.ApiException;
 import com.paypal.sdk.models.*;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -120,13 +119,20 @@ public class PayPalService {
       return PaymentResponse.builder().paymentId(paypalId).paymentStatus("COMPLETED").build();
     }
     try {
+      Order order = orderRepository.findByPaymentPaymentId(paypalId);
+      if(order == null){
+        throw new RuntimeException("Order not found");
+      }
+      if (OrderStatus.PAYMENT_FAILED.toString().equals(order.getStatus())) {
+        throw new IllegalStateException("Order already timed out — refusing late capture");
+      }
       CaptureOrderInput captureInput = new CaptureOrderInput.Builder(paypalId, null).build();
       com.paypal.sdk.models.Order captureOrder =
           paypalServerSdkClient.getOrdersController().captureOrder(captureInput).getResult();
       status = captureOrder.getStatus().toString();
       paymentId = captureOrder.getId();
       if ("COMPLETED".equals(status)) {
-        Order order = orderRepository.findByPaymentPaymentId(paypalId);
+         order = orderRepository.findByPaymentPaymentId(paypalId);
         List<OrderItem> orderItems = order.getOrderItems();
         for (OrderItem orderItem : orderItems) {
           Product product =
@@ -190,12 +196,33 @@ public class PayPalService {
       throw new RuntimeException("Payment is already cancelled");
     }
     order.getPayment().setStatus(PaymentStatus.CANCEL.toString());
-    order.getOrderItems().forEach(orderItem -> {
-      Product product  = productRepository.getById(orderItem.getProductId());
-      if(product.getReserveStock() < orderItem.getQuantity()) throw new RuntimeException("Product reserve error");
-      product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
-      productRepository.save(product);
-    });
+    if (OrderStatus.PAYMENT_FAILED.toString().equals(order.getStatus())) {
+      order
+          .getOrderItems()
+          .forEach(
+              orderItem -> {
+                Product product = productRepository.getById(orderItem.getProductId());
+                if (product.getReserveStock() < orderItem.getQuantity())
+                  throw new RuntimeException("Product reserve error");
+                product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
+                productRepository.save(product);
+              });
+    }
+    order
+            .getOrderItems()
+            .forEach(
+                    orderItem ->
+                            productRepository
+                                    .findById(orderItem.getProductId())
+                                    .ifPresent(
+                                            product ->{
+                                              if(product.getReserveStock() < orderItem.getQuantity()) {
+                                                throw new RuntimeException("Product reserve error");
+                                              }
+                                                    product.setReserveStock(
+                                                            product.getReserveStock() - orderItem.getQuantity());}
+
+                                    ));
     order.setStatus(OrderStatus.CANCELLED.toString());
     orderRepository.save(order);
     return PaymentResponse.builder()

@@ -1,14 +1,8 @@
 package com.ecommerce.np_shop.service.serviceImpl;
 
-import com.ecommerce.np_shop.dto.api.v1.ImageResponse;
-import com.ecommerce.np_shop.dto.api.v1.ProductRequest;
-import com.ecommerce.np_shop.dto.api.v1.ProductResponse;
-import com.ecommerce.np_shop.entity.Category;
-import com.ecommerce.np_shop.entity.Image;
-import com.ecommerce.np_shop.entity.Product;
-import com.ecommerce.np_shop.repo.CategoryRepository;
-import com.ecommerce.np_shop.repo.ImageRepository;
-import com.ecommerce.np_shop.repo.ProductRepository;
+import com.ecommerce.np_shop.dto.api.v1.*;
+import com.ecommerce.np_shop.entity.*;
+import com.ecommerce.np_shop.repo.*;
 import com.ecommerce.np_shop.service.ProductService;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
@@ -30,10 +24,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
+  private final ReviewRepository reviewRepository;
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
   private final ImageRepository imageRepository;
   private final String UPLOAD_ROOT_PATH = "upload";
+  private final AccountRepository accountRepository;
+
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
   public ProductResponse createProduct(ProductRequest product, MultipartFile file) {
@@ -179,6 +176,8 @@ public class ProductServiceImpl implements ProductService {
     productResponse.setDescription(savedProduct.getDescription());
     productResponse.setStock(savedProduct.getStock());
     productResponse.setPrice(savedProduct.getPrice());
+    productResponse.setOverAllRating(savedProduct.getOverAllRating());
+    productResponse.setNumberOfReviews(savedProduct.getReviews().size());
     productResponse.setCreatedAt(savedProduct.getCreatedAt());
     Image mainImage = savedProduct.getImages().stream()
             .filter(image -> image.getUrl().equals(savedProduct.getMainImageUrl()))
@@ -257,5 +256,47 @@ public class ProductServiceImpl implements ProductService {
   }
   public Page<ProductResponse> search(Pageable pageable , String keyword) {
     return productRepository.search(keyword, pageable).map(this::getProductResponse);
+  }
+
+  @Override
+  @PreAuthorize("hasRole('USER')")
+  @Transactional
+  public ReviewResponse postReview(UUID accountId, ReviewRequest reviewRequest) {
+
+    Account account =
+        accountRepository
+            .findById(accountId)
+            .orElseThrow(() -> new RuntimeException("Account not found"));
+    Product product =
+        productRepository
+            .findById(reviewRequest.getProductId())
+            .orElseThrow(() -> new RuntimeException("Product not found"));
+    Review review =
+        Review.builder()
+            .rating(reviewRequest.getRating())
+            .product(product)
+            .description(reviewRequest.getDescription())
+            .account(account)
+            .build();
+    product.getReviews().add(review);
+    product.calculateOverAllRating();
+    productRepository.save(product);
+    return getReviewResponse(review);
+  }
+
+  @Override
+  public Page<ReviewResponse> getReviews(Pageable page, UUID productId) {
+    return reviewRepository.getAllReviewByProductId(page, productId).map(this::getReviewResponse);
+  }
+
+  private ReviewResponse getReviewResponse(Review review) {
+    return ReviewResponse.builder()
+        .id(review.getId())
+        .rating(review.getRating())
+        .productId(review.getProduct().getId())
+        .createdAt(review.getCreatedAt())
+        .description(review.getDescription())
+        .accountUsername(review.getAccount().getUsername())
+        .build();
   }
 }
