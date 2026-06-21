@@ -1,5 +1,6 @@
 package com.ecommerce.np_shop.config;
 
+import com.ecommerce.np_shop.rate_limit.RateLimitFilter;
 import com.ecommerce.np_shop.security.JwtAuthenticationEntryPoint;
 import com.ecommerce.np_shop.security.JwtAuthenticationFilterChain;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ import java.util.List;
 public class SpringSecurityConfig {
     private final JwtAuthenticationFilterChain jwtAuthenticationFilterChain;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final RateLimitFilter  rateLimitFilter;
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
@@ -64,6 +66,7 @@ public class SpringSecurityConfig {
                                  .requestMatchers("/api/webhook/**").permitAll()
                                  .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilterChain, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, JwtAuthenticationFilterChain.class)
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 ;
         return http.build();
