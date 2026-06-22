@@ -46,6 +46,7 @@ public class SpringSecurityConfig {
                 .sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                          authorizeRequests
+                                 .requestMatchers(HttpMethod.GET, "/api/v1/server/check").permitAll()
                                  .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers(HttpMethod.POST,"/api/v1/product/review/**").hasAnyRole("USER")
                                  .requestMatchers("/api/auth/**").permitAll()

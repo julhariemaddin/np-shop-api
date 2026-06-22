@@ -2,15 +2,18 @@ package com.ecommerce.np_shop.exception;
 
 
 import com.ecommerce.np_shop.exception.customException.NpBadCredentialsException;
+import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +49,12 @@ public class GlobalExceptionHandler {
             "message : " , "Invalid body request or have unnecessary field"
             )
     );
+    }
+    @ExceptionHandler(NoResourceFoundException.class)
+    public  ResponseEntity<?> handleNoResourceFoundException(NoResourceFoundException e) {
+        return  ResponseEntity.status(HttpStatusCode.valueOf(404)).body(Map.of(
+                "message" , String.format("%s" , e.getMessage())
+        ));
     }
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<?> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {

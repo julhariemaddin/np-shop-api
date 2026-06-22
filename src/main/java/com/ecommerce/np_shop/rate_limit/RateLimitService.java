@@ -25,8 +25,8 @@ public class RateLimitService {
   public boolean allowedRequest(UUID accountId, String IP, String path) {
     if (accountId != null) {
       if (!checkLimit(
-          RateLimiterKey.ACCOUNT.getValue() + accountId.toString(),
-          50,
+          RateLimiterKey.ACCOUNT.getValue() + accountId,
+          100,
           1,
           RateIntervalUnit.MINUTES)) {
         return false;
@@ -34,7 +34,7 @@ public class RateLimitService {
       if (checkUserRoutes(path)) {
         EndpointLimit endpointLimit = ProtectedEndpointLimits.get(getRoot(path));
         return checkLimit(
-            RateLimiterKey.ENDPOINT.getValue() + accountId.toString(),
+            RateLimiterKey.ENDPOINT.getValue() + accountId,
             endpointLimit.rate,
             endpointLimit.interval,
             endpointLimit.unit);
@@ -83,5 +83,4 @@ public class RateLimitService {
   }
 
   private record EndpointLimit(int rate, int interval, RateIntervalUnit unit) {}
-  ;
 }
