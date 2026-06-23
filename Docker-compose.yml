@@ -5,6 +5,8 @@ services:
   np-shop:
     build: .
     container_name: np-shop
+    env_file:
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE : docker
     ports:
