@@ -1,4 +1,4 @@
-package com.ecommerce.np_shop.serviceTest;
+package com.ecommerce.np_shop.UnitServiceTest;
 
 import com.ecommerce.np_shop.entity.Order;
 import com.ecommerce.np_shop.repo.OrderRepository;

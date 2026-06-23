@@ -1,4 +1,4 @@
-package com.ecommerce.np_shop.serviceTest;
+package com.ecommerce.np_shop.UnitServiceTest;
 
 
 import com.ecommerce.np_shop.redis.model.Cart;

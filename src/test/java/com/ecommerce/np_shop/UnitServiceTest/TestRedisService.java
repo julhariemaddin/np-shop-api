@@ -1,11 +1,9 @@
-package com.ecommerce.np_shop.serviceTest;
+package com.ecommerce.np_shop.UnitServiceTest;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

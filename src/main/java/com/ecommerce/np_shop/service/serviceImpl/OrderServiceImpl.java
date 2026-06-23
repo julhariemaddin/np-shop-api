@@ -57,6 +57,7 @@ public class OrderServiceImpl implements OrderService {
       orderItem.setOrder(order);
       orderItem.setProductId(cartItem.getProductId());
       orderItem.setProductStatus(true);
+      orderItem.setProductName(cartItem.getProductName());
       orderItem.setPrice(cartItem.getProductPrice());
       orderItem.setQuantity(cartItem.getProductQuantity());
       order.setTotalItemsQuantity(order.getTotalItemsQuantity() + orderItem.getQuantity());
@@ -113,9 +114,11 @@ public class OrderServiceImpl implements OrderService {
                                               OrderItemRespond.builder()
                                                       .id(item.getId())
                                                       .orderId(item.getOrder().getId())
+
                                                       .price(item.getPrice())
                                                       .quantity(item.getQuantity())
                                                       .productStatus(productService.checkProductStatus(item.getProductId()))
+                                                      .productName(item.getProductName())
                                                       .productId(item.getProductId())
                                                       .build())
                               .toList())

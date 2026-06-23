@@ -12,6 +12,7 @@ public class OrderItemRespond {
     private UUID id;
     private UUID orderId;
     private UUID productId;
+    private String productName;
     private Boolean productStatus;
     private int quantity;
     private double price;

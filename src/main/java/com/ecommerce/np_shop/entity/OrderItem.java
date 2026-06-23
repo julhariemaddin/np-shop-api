@@ -22,6 +22,7 @@ public class OrderItem implements Serializable {
     @JoinColumn(name = "order_id")
     private Order order;
     private UUID productId;
+    private String productName;
     private Boolean productStatus;
     private int quantity;
     private double price;
