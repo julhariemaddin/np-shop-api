@@ -478,7 +478,6 @@ export JWT_TOKEN_EXPIRATION=3600000
 
 ## ☐ Screenshots
 
-> Add your own screenshots here once captured — placeholders below.
 
 **Docker containers running:**
 ```
@@ -486,7 +485,7 @@ docker compose -f Docker-compose.yml ps
 ```
 ![Docker containers](docs/screenshots/docker-ps.png)
 
-**Database schema (pgAdmin / DBeaver ER view):**
+**Database schema (DBeaver ER view):**
 ![Database diagram](docs/screenshots/db-diagram.png)
 
 **API documentation (Swagger UI):**
