@@ -478,7 +478,6 @@ export JWT_TOKEN_EXPIRATION=3600000
 
 ## ☐ Screenshots
 
-
 **Docker containers running:**
 ```
 docker compose -f Docker-compose.yml ps
@@ -489,16 +488,17 @@ docker compose -f Docker-compose.yml ps
 ![Database diagram](docs/screenshots/db-diagram.png)
 
 **API documentation (Swagger UI):**
-> Not currently included in `pom.xml`. To add it:
-> ```xml
-> <dependency>
->     <groupId>org.springdoc</groupId>
->     <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
->     <version>2.6.0</version>
-> </dependency>
-> ```
-> Once added, Swagger UI will be available at `http://localhost:8080/swagger-ui.html`.
-> ![Swagger UI](docs/screenshots/swagger-ui.png)
+
+Available at `http://localhost:8080/swagger-ui.html` once the app is running.
+
+| | |
+|---|---|
+| ![Swagger UI 1](docs/screenshots/swag-1.png) | ![Swagger UI 2](docs/screenshots/swag-2.png) |
+| ![Swagger UI 3](docs/screenshots/swag-3.png) | ![Swagger UI 4](docs/screenshots/swag-4.png) |
+| ![Swagger UI 5](docs/screenshots/swag-5.png) | ![Swagger UI 6](docs/screenshots/swag-6.png) |
+| ![Swagger UI 7](docs/screenshots/swag-7.png) | ![Swagger UI 8](docs/screenshots/swag-8.png) |
+| ![Swagger UI 9](docs/screenshots/swag-9.png) | |
+
 
 ---
 
