@@ -29,7 +29,7 @@ public class RedisConfig{
     public RedissonClient redisson(){
         Config config = new Config();
         config.useSingleServer()
-                .setAddress("redis://"+redisHost+":"+redisPort)
+                .setAddress("rediss://"+redisHost+":"+redisPort)
                 .setPassword(redisPassword)
                 .setConnectionPoolSize(69)
                 .setConnectionMinimumIdleSize(24)
@@ -38,7 +38,6 @@ public class RedisConfig{
                 .setRetryInterval(1000);
         return Redisson.create(config);
     }
-
 
 
 }

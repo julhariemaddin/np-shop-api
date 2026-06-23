@@ -5,6 +5,8 @@ spring:
     password: ${DEV_POSTGRES_PASSWORD}
   data:
     redis:
-      host: Localhost
+      host: ${DEV_REDIS_HOST}
       port: 6379
       password: ${DEV_REDIS_PASSWORD}
+      ssl:
+        enabled: true
