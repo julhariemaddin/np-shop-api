@@ -1,3 +1,12 @@
+FROM eclipse-temurin:21-jdk-ubi10-minimal AS build
+
+WORKDIR /app
+
+COPY . .
+
+RUN ./mvnw clean package -DskipTests
+
+
 FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
