@@ -26,6 +26,22 @@
 
 ---
 
+## ▶︎ Quick Start
+
+```bash
+git clone https://github.com/julhariemaddin/np-shop.git
+cd np-shop
+
+# create your .env file (see Environment Variables below)
+cp .env.example .env
+
+docker compose -f Docker-compose.yml up -d --build
+```
+
+The API is now running at `http://localhost:8080`.
+
+---
+
 ## ⚒︎ Tech Stack
 
 | Layer | Technology |
@@ -40,6 +56,49 @@
 | **Boilerplate** | ![Lombok](https://img.shields.io/badge/-Lombok-CC0000?style=flat-square&logo=lombok&logoColor=white) |
 | **Containerization** | ![Docker](https://img.shields.io/badge/-Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/-Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white) |
 | **Validation** | ![Hibernate Validator](https://img.shields.io/badge/-Bean%20Validation-59666C?style=flat-square&logo=hibernate&logoColor=white) |
+
+---
+
+## ⌂ Architecture
+
+NP-Shop follows a **layered architecture** with clear separation of concerns — each layer only talks to the one directly below it:
+
+```
+Controller  →  Service  →  Repository  →  Database
+```
+
+> This is a **layered Spring architecture**, not strict Clean Architecture / Hexagonal Architecture — there's no dedicated domain layer that's fully isolated from framework concerns (entities are JPA-annotated, services depend on Spring beans directly, etc.). For a project this size, layered architecture is the right level of structure: it keeps responsibilities separated without the overhead of ports/adapters.
+
+```mermaid
+flowchart TD
+    Client[Client] -->|HTTP request| RateLimit[Rate Limit Filter]
+    RateLimit --> JwtFilter[JWT Authentication Filter]
+    JwtFilter --> Controller[Controller Layer]
+
+    Controller --> Service[Service Layer]
+
+    Service --> Repository[Repository Layer<br/>Spring Data JPA]
+    Repository --> DB[(PostgreSQL)]
+
+    Service --> RedisService[Redis Services<br/>Cart / Refresh Tokens]
+    RedisService --> Redis[(Redis)]
+
+    Service --> PayPalService[PayPal Service]
+    PayPalService --> PayPalAPI[PayPal API]
+    PayPalAPI -. webhook .-> Webhook[Paypal Webhook Controller]
+    Webhook --> Service
+
+    JwtFilter -. validates .-> JwtService[JWT Service]
+    RateLimit -. reads token via .-> JwtService
+```
+
+**Flow summary:**
+1. Every request passes through the **Rate Limit Filter** (account/IP/endpoint buckets via Redisson) and the **JWT Authentication Filter** (validates the bearer token and loads the account).
+2. The **Controller** receives the validated request and delegates to a **Service**.
+3. The **Service** holds the business logic and talks to:
+   - **Repository** (Spring Data JPA) for persistent data in **PostgreSQL**
+   - **Redis services** for ephemeral data (cart contents, refresh tokens)
+   - **PayPal service** for checkout sessions, with PayPal calling back into the **webhook controller** to confirm payment status
 
 ---
 
@@ -211,6 +270,97 @@ If a token is present, the user's ID is extracted from the JWT and rate-limited 
 
 ---
 
+## ⌁ API Examples
+
+### `POST /api/auth/register`
+
+Request:
+```json
+{
+  "username": "julharie",
+  "password": "StrongPass1!",
+  "email": "julharie@example.com"
+}
+```
+
+Response `200 OK`:
+```json
+{
+  "id": "f3a1c9e2-1b2d-4c3e-8a9f-2d3e4f5a6b7c",
+  "username": "julharie",
+  "email": "julharie@example.com"
+}
+```
+
+### `POST /api/auth/sign-in`
+
+Request:
+```json
+{
+  "username": "julharie",
+  "password": "StrongPass1!"
+}
+```
+
+Response `200 OK`:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refreshToken": "8f14e45f-ceea-467e-bd9d-1a2b3c4d5e6f",
+  "username": "julharie",
+  "role": ["ROLE_USER"],
+  "email": "julharie@example.com"
+}
+```
+
+### `GET /api/v1/product`
+
+Response `200 OK` (paginated):
+```json
+{
+  "content": [
+    {
+      "id": "9b2c1d3e-...",
+      "name": "Wireless Mouse",
+      "description": "Ergonomic 2.4GHz wireless mouse",
+      "stock": 42,
+      "price": 19.99,
+      "mainImage": { "url": "https://.../mouse.jpg" },
+      "categoryId": "c1a2b3...",
+      "numberOfReviews": 12,
+      "overAllRating": 4.5
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+### `POST /api/v1/order`
+
+Requires `Authorization: Bearer <token>`. Creates an order from the account's current Redis cart — no request body needed.
+
+Response `200 OK`:
+```json
+{
+  "id": "a1b2c3d4-...",
+  "status": "PENDING",
+  "totalItemsQuantity": 2,
+  "totalPrice": 39.98,
+  "createdAt": "2026-06-23T10:15:00"
+}
+```
+
+Rate-limited response `429 Too Many Requests`:
+```json
+{
+  "code": 429,
+  "message": "Too many requests"
+}
+```
+
+---
+
 ## ⌁ API Endpoints
 
 | Method | Endpoint | Description |
@@ -235,14 +385,33 @@ If a token is present, the user's ID is extracted from the JWT and rate-limited 
 
 The app uses Spring profiles: **`dev`** (local) and **`docker`** (containerized), both reading secrets from environment variables.
 
-### Required environment variables
+### Environment Variables
+
+| Variable | Used by | Description |
+|---|---|---|
+| `JWT_SECRET` | All profiles | Secret key used to sign/verify JWTs |
+| `JWT_TOKEN_EXPIRATION` | All profiles | Access token lifetime (ms) |
+| `PAYPAL_CLIENT_ID` | All profiles | PayPal app client ID |
+| `PAYPAL_CLIENT_SECRET` | All profiles | PayPal app client secret |
+| `PAYPAL_WEBHOOK_ID` | All profiles | PayPal webhook ID for signature verification |
+| `PAYPAL_IS_SANDBOX` | All profiles | `true` for sandbox, `false` for production |
+| `PAYPAL_RETURN_URL` | All profiles | Redirect URL after successful checkout |
+| `PAYPAL_CANCEL_URL` | All profiles | Redirect URL after cancelled checkout |
+| `DOCK_JDBC_POSTGRES_DB` | `docker` profile | Postgres JDBC URL (e.g. `jdbc:postgresql://postgres:5432/mydb`) |
+| `DOCK_POSTGRES_USERNAME` | `docker` profile | Postgres username |
+| `DOCK_POSTGRES_PASSWORD` | `docker` profile | Postgres password |
+| `DOCK_REDIS_PASSWORD` | `docker` profile | Redis password |
+| `DEV_JDBC_POSTGRES_DB` | `dev` profile | Postgres JDBC URL for local development |
+| `DEV_POSTGRES_USERNAME` | `dev` profile | Postgres username (local) |
+| `DEV_POSTGRES_PASSWORD` | `dev` profile | Postgres password (local) |
+| `DEV_REDIS_PASSWORD` | `dev` profile | Redis password (local) |
+
+`.env.example` (copy to `.env` and fill in):
 
 ```env
-# JWT
 JWT_SECRET=
 JWT_TOKEN_EXPIRATION=
 
-# PayPal
 PAYPAL_CLIENT_ID=
 PAYPAL_CLIENT_SECRET=
 PAYPAL_WEBHOOK_ID=
@@ -250,12 +419,9 @@ PAYPAL_IS_SANDBOX=true
 PAYPAL_RETURN_URL=
 PAYPAL_CANCEL_URL=
 
-# Postgres (docker profile)
 DOCK_JDBC_POSTGRES_DB=jdbc:postgresql://postgres:5432/mydb
 DOCK_POSTGRES_USERNAME=admin
 DOCK_POSTGRES_PASSWORD=password
-
-# Redis (docker profile)
 DOCK_REDIS_PASSWORD=StrongPassword
 ```
 
@@ -270,16 +436,27 @@ DOCK_REDIS_PASSWORD=StrongPassword
 
 ---
 
-## ⛁ Running with Docker
+## ⛁ Deployment
+
+For local Docker usage, see **Quick Start** above. For longer-running or server deployments, run detached and check status/logs separately:
 
 ```bash
-# 1. Create a .env file in the project root with the variables above
+# Start in the background
+docker compose -f Docker-compose.yml up -d --build
 
-# 2. Build and start everything (app + Postgres + Redis)
-docker compose -f Docker-compose.yml up --build
+# Check container status
+docker compose -f Docker-compose.yml ps
+
+# Tail logs
+docker compose -f Docker-compose.yml logs -f np-shop
+
+# Stop everything
+docker compose -f Docker-compose.yml down
 ```
 
 The API will be available at `http://localhost:8080`.
+
+> For production, swap the hardcoded Postgres/Redis credentials in `Docker-compose.yml` for `.env`-driven values (see the note in **Configuration** above), and consider a managed Postgres/Redis instance instead of the bundled containers.
 
 ---
 
@@ -296,6 +473,33 @@ export JWT_TOKEN_EXPIRATION=3600000
 
 ./mvnw spring-boot:run
 ```
+
+---
+
+## ☐ Screenshots
+
+> Add your own screenshots here once captured — placeholders below.
+
+**Docker containers running:**
+```
+docker compose -f Docker-compose.yml ps
+```
+![Docker containers](docs/screenshots/docker-ps.png)
+
+**Database schema (pgAdmin / DBeaver ER view):**
+![Database diagram](docs/screenshots/db-diagram.png)
+
+**API documentation (Swagger UI):**
+> Not currently included in `pom.xml`. To add it:
+> ```xml
+> <dependency>
+>     <groupId>org.springdoc</groupId>
+>     <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+>     <version>2.6.0</version>
+> </dependency>
+> ```
+> Once added, Swagger UI will be available at `http://localhost:8080/swagger-ui.html`.
+> ![Swagger UI](docs/screenshots/swagger-ui.png)
 
 ---
 
