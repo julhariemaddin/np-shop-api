@@ -318,6 +318,13 @@ np-shop/
 
 ---
 
+## ✎ Author
+
+**Julharie M. Maddin**
+[GitHub @julhariemaddin](https://github.com/julhariemaddin)
+
+---
+
 <div align="center">
 
 Built with ☕︎ & ⚙︎ Spring Boot
