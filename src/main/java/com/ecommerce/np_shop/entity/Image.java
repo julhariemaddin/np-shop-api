@@ -17,6 +17,7 @@ public class Image {
     @Id
     @GeneratedValue(strategy= GenerationType.UUID)
     private UUID id;
+    private String publicId;
     private String url;
     private String fileName;
     private String contentType;

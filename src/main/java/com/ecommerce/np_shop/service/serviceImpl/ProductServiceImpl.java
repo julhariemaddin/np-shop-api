@@ -1,19 +1,15 @@
 package com.ecommerce.np_shop.service.serviceImpl;
 
+import com.ecommerce.np_shop.cloudinary.service.CloudinaryService;
 import com.ecommerce.np_shop.dto.api.v1.*;
 import com.ecommerce.np_shop.entity.*;
 import com.ecommerce.np_shop.repo.*;
 import com.ecommerce.np_shop.service.ProductService;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,8 +24,8 @@ public class ProductServiceImpl implements ProductService {
   private final ProductRepository productRepository;
   private final CategoryRepository categoryRepository;
   private final ImageRepository imageRepository;
-  private final String UPLOAD_ROOT_PATH = "upload";
   private final AccountRepository accountRepository;
+  private final CloudinaryService cloudinaryService;
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
@@ -80,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
   public void deleteProduct(UUID productId) {
     Product product = checkProductExistsAndGetProduct(productId);
     for (Image image : product.getImages()) {
-      removeFile(image.getUrl());
+      removeFile(image.getPublicId());
     }
     productRepository.deleteById(productId);
   }
@@ -159,7 +155,7 @@ public class ProductServiceImpl implements ProductService {
     Image image =  imageRepository
         .findById(imageId)
         .orElseThrow(() -> new RuntimeException("Image not found"));
-    removeFile(image.getUrl());
+    removeFile(image.getPublicId());
     imageRepository.delete(image);
   }
 
@@ -204,7 +200,11 @@ public class ProductServiceImpl implements ProductService {
             .build();
   }
 
-  private String getImageUrl(MultipartFile file) {
+
+
+  ///Need Refactoring
+  //TODO change the persistent to the Cloudinary
+  private Map<String , Object> uploadImage(MultipartFile file) {
     String originalFilename = file.getOriginalFilename();
     if (originalFilename == null
         || (!originalFilename.endsWith(".png")
@@ -212,48 +212,38 @@ public class ProductServiceImpl implements ProductService {
             && !originalFilename.endsWith(".jpeg"))) {
       throw new RuntimeException("Only these file format is available .png .jpeg .jpg");
     }
-    String fileName = UUID.randomUUID() + "-" + originalFilename;
-    Path path = Paths.get(UPLOAD_ROOT_PATH, fileName);
     try {
-      Files.createDirectories(path.getParent());
-      Files.write(path, file.getBytes());
+      return cloudinaryService.uploadImage(file);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return fileName;
   }
-  private void removeFile(String imageUrl){
-    Path path = Paths.get(UPLOAD_ROOT_PATH + "/" +Paths.get(imageUrl));
-    if (Files.exists(path)) {
-      try {
-        Files.delete(path);
-      } catch (Exception ex) {
-        throw new RuntimeException(ex);
-      }
-    }
+  private void removeFile(String publicId){
+   cloudinaryService.deleteImage(publicId);
   }
+  ///End of refactoring
+
+
+
   public boolean checkProductStatus(UUID productId) {
     return  productRepository.existsById(productId);
   }
+
   private Image getImage(MultipartFile file) {
     String originalFilename = file.getOriginalFilename();
     String contentType = file.getContentType();
-    String url = getImageUrl(file);
+    Map<String , Object> result  = uploadImage(file);
+    String url = result.get("secure_url").toString();
+    String publicId = result.get("public_id").toString();
     Image image = new Image();
     image.setUrl(url);
+    image.setPublicId(publicId);
     image.setFileName(originalFilename);
     image.setContentType(contentType);
     return image;
   }
 
-  public Resource getImageResource(String url) throws MalformedURLException {
-    Path path = Paths.get(UPLOAD_ROOT_PATH + "/" +Paths.get(url));
-    Resource resource = new UrlResource(path.toUri());
-    if (!resource.exists() || !resource.isReadable()) {
-      throw new RuntimeException("Image not found");
-    }
-    return resource;
-  }
+
   public Page<ProductResponse> search(Pageable pageable , String keyword) {
     return productRepository.search(keyword, pageable).map(this::getProductResponse);
   }

@@ -48,7 +48,6 @@ public class SpringSecurityConfig {
                          authorizeRequests
                                  //.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                                  .requestMatchers(HttpMethod.GET, "/api/v1/server/check").permitAll()
-                                 .requestMatchers(HttpMethod.GET,"/api/v1/image/**").permitAll()
                                  .requestMatchers(HttpMethod.POST,"/api/v1/product/review/**").hasAnyRole("USER")
                                  .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/category/**").permitAll()
