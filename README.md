@@ -387,24 +387,28 @@ The app uses Spring profiles: **`dev`** (local) and **`docker`** (containerized)
 
 ### Environment Variables
 
-| Variable | Used by | Description |
-|---|---|---|
-| `JWT_SECRET` | All profiles | Secret key used to sign/verify JWTs |
-| `JWT_TOKEN_EXPIRATION` | All profiles | Access token lifetime (ms) |
-| `PAYPAL_CLIENT_ID` | All profiles | PayPal app client ID |
-| `PAYPAL_CLIENT_SECRET` | All profiles | PayPal app client secret |
-| `PAYPAL_WEBHOOK_ID` | All profiles | PayPal webhook ID for signature verification |
-| `PAYPAL_IS_SANDBOX` | All profiles | `true` for sandbox, `false` for production |
-| `PAYPAL_RETURN_URL` | All profiles | Redirect URL after successful checkout |
-| `PAYPAL_CANCEL_URL` | All profiles | Redirect URL after cancelled checkout |
-| `DOCK_JDBC_POSTGRES_DB` | `docker` profile | Postgres JDBC URL (e.g. `jdbc:postgresql://postgres:5432/mydb`) |
-| `DOCK_POSTGRES_USERNAME` | `docker` profile | Postgres username |
-| `DOCK_POSTGRES_PASSWORD` | `docker` profile | Postgres password |
-| `DOCK_REDIS_PASSWORD` | `docker` profile | Redis password |
-| `DEV_JDBC_POSTGRES_DB` | `dev` profile | Postgres JDBC URL for local development |
-| `DEV_POSTGRES_USERNAME` | `dev` profile | Postgres username (local) |
-| `DEV_POSTGRES_PASSWORD` | `dev` profile | Postgres password (local) |
-| `DEV_REDIS_PASSWORD` | `dev` profile | Redis password (local) |
+| Variable                 | Used by | Description                                                     |
+|--------------------------|---|-----------------------------------------------------------------|
+| `JWT_SECRET`             | All profiles | Secret key used to sign/verify JWTs                             |
+| `JWT_TOKEN_EXPIRATION`   | All profiles | Access token lifetime (ms)                                      |
+| `PAYPAL_CLIENT_ID`       | All profiles | PayPal app client ID                                            |
+| `PAYPAL_CLIENT_SECRET`   | All profiles | PayPal app client secret                                        |
+| `PAYPAL_WEBHOOK_ID`      | All profiles | PayPal webhook ID for signature verification                    |
+| `PAYPAL_IS_SANDBOX`      | All profiles | `true` for sandbox, `false` for production                      |
+| `PAYPAL_RETURN_URL`      | All profiles | Redirect URL after successful checkout                          |
+| `PAYPAL_CANCEL_URL`      | All profiles | Redirect URL after cancelled checkout                           |
+| `DOCK_JDBC_POSTGRES_DB`  | `docker` profile | Postgres JDBC URL (e.g. `jdbc:postgresql://postgres:5432/mydb`) |
+| `DOCK_POSTGRES_USERNAME` | `docker` profile | Postgres username                                               |
+| `DOCK_POSTGRES_PASSWORD` | `docker` profile | Postgres password                                               |
+| `DOCK_REDIS_PASSWORD`    | `docker` profile | Redis password                                                  |
+| `DEV_JDBC_POSTGRES_DB`   | `dev` profile | Postgres JDBC URL for local development                         |
+| `DEV_POSTGRES_USERNAME`  | `dev` profile | Postgres username (local)                                       |
+| `DEV_POSTGRES_PASSWORD`  | `dev` profile | Postgres password (local)                                       |
+| `DEV_REDIS_HOST`         | `dev` profile | Redis host (local)                                              |
+| `DEV_REDIS_PASSWORD`     | `dev` profile | Redis password (local)                                          |
+| `CLOUDINARY_CLOUD_NAME`  | All profiles | Cloudinary account cloud name (used to build asset URLs)        |
+| `CLOUDINARY_API_KEY`     | All profiles | Cloudinary API key for authenticated uploads/deletes             |
+| `CLOUDINARY_API_SECRET`  | All profiles | Cloudinary API secret — never expose to the frontend             |
 
 `.env.example` (copy to `.env` and fill in):
 
@@ -506,14 +510,15 @@ Available at `http://localhost:8080/swagger-ui.html` once the app is running.
 
 ```
 np-shop/
-├── controller/        # REST controllers (auth, products, cart, orders, users...)
+├── cloudinary/         # Cloudinary config + upload/delete service
+├── controller/         # REST controllers (auth, products, cart, orders, users...)
 ├── service/            # Business logic (products, orders, categories, payments)
 ├── redis/              # Redis-backed services (cart, refresh tokens)
 ├── rate_limit/         # RateLimitFilter + RateLimitService (Redisson)
 ├── security/           # JWT service, filters, account details
 ├── payment/paypal/     # PayPal SDK config, service, controller, webhook
 ├── entity/             # JPA entities
-├── repo/                # Spring Data JPA repositories
+├── repo/               # Spring Data JPA repositories
 ├── dto/                # Request/response DTOs
 ├── exception/          # Custom exceptions + global handler
 └── scheduler/          # Pending-payment order expiry job
