@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 public class OrderServiceImpl implements OrderService {
   private final OrderItemRepository orderItemRepository;
   private final CartService cartService;
-  private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
   private final PaymentService paymentService;
   private final AccountRepository accountRepository;

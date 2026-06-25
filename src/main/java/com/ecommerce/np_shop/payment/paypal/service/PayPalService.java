@@ -5,6 +5,7 @@ import com.ecommerce.np_shop.entity.OrderItem;
 import com.ecommerce.np_shop.entity.Product;
 import com.ecommerce.np_shop.enums.OrderStatus;
 import com.ecommerce.np_shop.enums.PaymentStatus;
+import com.ecommerce.np_shop.enums.RLockKey;
 import com.ecommerce.np_shop.payment.dto.PaymentRequest;
 import com.ecommerce.np_shop.payment.dto.PaymentResponse;
 import com.ecommerce.np_shop.repo.OrderRepository;
@@ -23,7 +24,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +42,8 @@ public class PayPalService {
   private final PayPalAuthService payPalAuthService;
   private final HttpClient httpClient = HttpClient.newHttpClient();
   private final ObjectMapper objectMapper = new ObjectMapper();
+  private final RedissonClient redissonClient;
+
   @Value("${paypal.return-url}")
   private String returnUrl;
 
@@ -46,11 +52,16 @@ public class PayPalService {
 
 
   public PaymentResponse payment(PaymentRequest paymentRequest, UUID userId) {
-    try {
+
       Order order =
           orderRepository
               .findByIdAndAccountId(UUID.fromString(paymentRequest.getOrderId()), userId)
               .orElseThrow(() -> new RuntimeException("Order not found"));
+      RLock orderLock = redissonClient.getLock(RLockKey.ORDER.getValue()+order.getId());
+    try {
+      if(!orderLock.tryLock(5,10,TimeUnit.SECONDS)){
+        throw new RuntimeException("Order lock timed out");
+      }
       if (order.getPayment().getStatus().equals(PaymentStatus.PAID.toString())) {
         throw new RuntimeException("Payment status is already paid");
       }
@@ -89,11 +100,23 @@ public class PayPalService {
 
       order.getOrderItems().forEach(orderItem -> {
         Product product = productRepository.findById(orderItem.getProductId()).orElseThrow(() -> new RuntimeException("No product found!"));
+        RLock productLock = redissonClient.getLock(RLockKey.PRODUCT.getValue()+product.getId());
+        try{
+          if(!productLock.tryLock(5,10,TimeUnit.SECONDS)){
+            throw new RuntimeException("Product lock timed out");
+          }
         if(product.getStock() <= 0 || (product.getStock() < orderItem.getQuantity())){
           throw new RuntimeException("Insufficient stock : " + product.getName() + " , Available Stock : " + product.getStock());
         }
         product.setReserveStock(product.getReserveStock() + orderItem.getQuantity());
         productRepository.save(product);
+        }catch(InterruptedException e){
+          throw new RuntimeException(e);
+        }finally{
+          if(productLock.isHeldByCurrentThread()){
+            productLock.unlock();
+          }
+}
       });
       order.getPayment().setStatus(PaymentStatus.PROCESSING.toString());
       order.getPayment().setPaymentId(paypalOrder.getId());
@@ -104,13 +127,16 @@ public class PayPalService {
           .approvalUrl(approvalUrl)
           .paymentStatus(paypalOrder.getStatus().toString())
           .build();
-    } catch (IOException ioException) {
+    } catch (IOException | InterruptedException ioException) {
       throw new RuntimeException(ioException.getMessage());
     } catch (ApiException apiException) {
       throw new RuntimeException(apiException);
-    }
+    } finally{
+      if(orderLock.isHeldByCurrentThread()){
+        orderLock.unlock();
+      }
+}
   }
-
 
   public PaymentResponse capturePayment(String paypalId) {
     String paymentId;
@@ -118,10 +144,11 @@ public class PayPalService {
     if("COMPLETED".equals(getOrderStatus(paypalId))){
       return PaymentResponse.builder().paymentId(paypalId).paymentStatus("COMPLETED").build();
     }
-    try {
       Order order = orderRepository.findByPaymentPaymentId(paypalId);
-      if(order == null){
-        throw new RuntimeException("Order not found");
+    RLock orderLock = redissonClient.getLock(RLockKey.ORDER.getValue()+order.getId());
+    try {
+      if(!orderLock.tryLock(5,10,TimeUnit.SECONDS)) {
+        throw new RuntimeException("Order lock timed out");
       }
       if (OrderStatus.PAYMENT_FAILED.toString().equals(order.getStatus())) {
         throw new IllegalStateException("Order already timed out — refusing late capture");
@@ -139,98 +166,100 @@ public class PayPalService {
               productRepository
                   .findById(orderItem.getProductId())
                   .orElseThrow(() -> new RuntimeException("Product not found"));
+          RLock productLock = redissonClient.getLock(RLockKey.PRODUCT.getValue()+product.getId());
+          try{
+            if(!productLock.tryLock(5,10,TimeUnit.SECONDS)) {
+              throw new RuntimeException("Product lock timed out");
+            }
           if (product.getReserveStock() < orderItem.getQuantity()) {
             throw new RuntimeException("Product Reserve is insufficient");
           }
           product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
           product.setStock(product.getStock() - orderItem.getQuantity());
           productRepository.save(product);
+          }catch (InterruptedException e){
+            throw new RuntimeException(e.getMessage());
+          }finally{
+            if(productLock.isHeldByCurrentThread()){
+              productLock.unlock();
+            }
+}
         }
         order.getPayment().setStatus(PaymentStatus.PAID.toString());
         order.setStatus(OrderStatus.CONFIRMED.toString());
         orderRepository.save(order);
       }
-    } catch (ApiException apiException) {
-      String message = getString(apiException, paypalId);
-      throw new RuntimeException(message);
-    } catch (IOException ioException) {
-      throw new RuntimeException(ioException.getMessage());
-    }
-    return PaymentResponse.builder().paymentId(paymentId).paymentStatus(status).build();
-  }
-
-  private String getString(ApiException apiException, String paypalId) {
-    Order order = getOrderByPaymentId(paypalId);
-    int statusCode = apiException.getResponseCode();
-    String message = "";
-    if (statusCode == 400) {
-      message = "Bad Request";
-    } else if (statusCode == 404) {
-      message = "Not Found";
-    } else if (statusCode == 422 && apiException.getMessage().contains("ORDER_ALREADY_CAPTURED")) {
-      if (!PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())) {
-        order.getPayment().setStatus(PaymentStatus.PAID.toString());
-        order.setStatus(OrderStatus.CONFIRMED.toString());
-        orderRepository.save(order);
+    } catch (ApiException | IOException | InterruptedException e) {
+      throw new RuntimeException(e.getMessage());
+   }finally{
+      if(orderLock.isHeldByCurrentThread()){
+        orderLock.unlock();
       }
-      return "Order Already Captured";
-    } else if (statusCode == 422 && apiException.getMessage().contains("ORDER_NOT_APPROVED")) {
-      order.getPayment().setStatus(PaymentStatus.FAILED.toString());
-      order.setStatus(OrderStatus.PAYMENT_FAILED.toString());
-      orderRepository.save(order);
-      message = "Order Not Approved";
-    }
-    return message.isEmpty() ? apiException.getMessage() : message;
-  }
-
-  private Order getOrderByPaymentId(String paymentId) {
-    return orderRepository.findByPaymentPaymentId(paymentId);
+}
+    return PaymentResponse.builder().paymentId(paymentId).paymentStatus(status).build();
   }
 
   public PaymentResponse cancelPayment(String paypalId) {
     Order order = orderRepository.findByPaymentPaymentId(paypalId);
+    /// Order done in cancel payment
+    RLock orderLock = redissonClient.getLock(RLockKey.ORDER.getValue() + order.getId());
+    try {
+      boolean orderLocked = orderLock.tryLock(5, 10, TimeUnit.SECONDS);
+      if(!orderLocked){
+        throw new RuntimeException("Order Lock is not acquired");
+      }
     if(PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())) {
       throw new RuntimeException("Payment is already paid");
     }
     if(PaymentStatus.CANCEL.toString().equals(order.getPayment().getStatus())) {
       throw new RuntimeException("Payment is already cancelled");
     }
+
     order.getPayment().setStatus(PaymentStatus.CANCEL.toString());
-    if (OrderStatus.PAYMENT_FAILED.toString().equals(order.getStatus())) {
       order
           .getOrderItems()
           .forEach(
-              orderItem -> {
-                Product product = productRepository.getById(orderItem.getProductId());
-                if (product.getReserveStock() < orderItem.getQuantity())
-                  throw new RuntimeException("Product reserve error");
-                product.setReserveStock(product.getReserveStock() - orderItem.getQuantity());
-                productRepository.save(product);
-              });
-    }
-    order
-            .getOrderItems()
-            .forEach(
-                    orderItem ->
-                            productRepository
-                                    .findById(orderItem.getProductId())
-                                    .ifPresent(
-                                            product ->{
-                                              if(product.getReserveStock() < orderItem.getQuantity()) {
-                                                throw new RuntimeException("Product reserve error");
-                                              }
-                                                    product.setReserveStock(
-                                                            product.getReserveStock() - orderItem.getQuantity());}
-
-                                    ));
+              orderItem ->
+                  productRepository
+                      .findById(orderItem.getProductId())
+                      .ifPresent(
+                          product -> {
+                            RLock productLock =
+                                redissonClient.getLock(
+                                    RLockKey.PRODUCT.getValue() + product.getId());
+                            try {
+                              boolean productLocked =
+                                  productLock.tryLock(5, 10, TimeUnit.SECONDS);
+                              if (!productLocked) {
+                                throw new RuntimeException("Product lock not acquired");
+                              }
+                              if (product.getReserveStock() < orderItem.getQuantity()) {
+                                throw new RuntimeException("Product reserve error");
+                              }
+                              product.setReserveStock(
+                                  product.getReserveStock() - orderItem.getQuantity());
+                            } catch (InterruptedException e) {
+                              throw new RuntimeException(e);
+                            } finally {
+                              if (productLock.isHeldByCurrentThread()) {
+                                productLock.unlock();
+                              }
+                            }
+                          }));
     order.setStatus(OrderStatus.CANCELLED.toString());
     orderRepository.save(order);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e.getMessage());
+    } finally {
+      if (orderLock.isHeldByCurrentThread()) {
+        orderLock.unlock();
+      }
+    }
     return PaymentResponse.builder()
         .paymentId(paypalId)
         .paymentStatus(order.getPayment().getStatus())
         .build();
   }
-
 
   public String getOrderStatus(String paypalId) {
     try{

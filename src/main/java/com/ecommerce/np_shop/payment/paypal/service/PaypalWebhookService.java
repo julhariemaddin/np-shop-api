@@ -4,6 +4,7 @@ import com.ecommerce.np_shop.entity.Order;
 import com.ecommerce.np_shop.entity.Product;
 import com.ecommerce.np_shop.enums.OrderStatus;
 import com.ecommerce.np_shop.enums.PaymentStatus;
+import com.ecommerce.np_shop.enums.RLockKey;
 import com.ecommerce.np_shop.repo.OrderRepository;
 import com.ecommerce.np_shop.repo.ProductRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,19 +14,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.paypal.sdk.PaypalServerSdkClient;
 import com.paypal.sdk.exceptions.ApiException;
 import com.paypal.sdk.models.GetOrderInput;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class PaypalWebhookService {
+  private final RedissonClient redissonClient;
   private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
   private final PayPalAuthService payPalAuthService;
@@ -40,21 +46,46 @@ public class PaypalWebhookService {
     if (order == null) {
       throw new RuntimeException("Payment not found hcc");
     }
+    RLock orderLock = redissonClient.getLock(RLockKey.ORDER.getValue() + order.getId());
+    try {
+      if (!orderLock.tryLock(5, 10, TimeUnit.SECONDS)) {
+        throw new RuntimeException("Order lock timeout");
+      }
     if (!PaymentStatus.PAID.toString().equals(order.getPayment().getStatus())) {
         /// Maybe the webhook already handle the capture before the capture has bent sent by the frontend
         if (!"COMPLETED".equalsIgnoreCase(getOrderStatus(paypalId))) {
         order.setStatus(OrderStatus.CONFIRMED.toString());
-        order
-            .getOrderItems()
-            .forEach(
-                item -> {
-                  Product product = productRepository.getById(item.getProductId());
-                  product.setStock(product.getStock() - item.getQuantity());
-                  product.setReserveStock(product.getReserveStock() - item.getQuantity());
-                  productRepository.save(product);
-                });
+          order
+              .getOrderItems()
+              .forEach(
+                  item -> {
+                    Product product = productRepository.getById(item.getProductId());
+                    RLock productLock =
+                        redissonClient.getLock(RLockKey.PRODUCT.getValue() + product.getId());
+                    try {
+                      if (!productLock.tryLock(5, 10, TimeUnit.SECONDS)) {
+                        throw new RuntimeException("Product lock timeout");
+                      }
+                      product.setStock(product.getStock() - item.getQuantity());
+                      product.setReserveStock(product.getReserveStock() - item.getQuantity());
+                      productRepository.save(product);
+                    } catch (InterruptedException e) {
+                      throw new RuntimeException(e.getMessage());
+                    } finally {
+                      if (productLock.isHeldByCurrentThread()) {
+                        productLock.unlock();
+                      }
+                    }
+                  });
         order.getPayment().setStatus(PaymentStatus.PAID.toString());
         orderRepository.save(order);
+      }
+    }
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e.getMessage());
+    } finally {
+      if (orderLock.isHeldByCurrentThread()) {
+        orderLock.unlock();
       }
     }
   }
@@ -65,17 +96,42 @@ public class PaypalWebhookService {
     if (order == null) {
       throw new RuntimeException("Payment not found hcf");
     }
+    RLock orderLock = redissonClient.getLock(RLockKey.ORDER.getValue() + order.getId());
+    try {
+      if (!orderLock.tryLock(5, 10, TimeUnit.SECONDS)) {
+        throw new RuntimeException("Order lock timeout");
+      }
     order.setStatus(OrderStatus.CONFIRMED.toString());
-    order
-        .getOrderItems()
-        .forEach(
-            item -> {
-              Product product = productRepository.getById(item.getProductId());
-              product.setReserveStock(product.getReserveStock() - item.getQuantity());
-              productRepository.save(product);
-            });
+      order
+          .getOrderItems()
+          .forEach(
+              item -> {
+                Product product = productRepository.getById(item.getProductId());
+                RLock productLock =
+                    redissonClient.getLock(RLockKey.PRODUCT.getValue() + product.getId());
+                try {
+                  if (!productLock.tryLock(5, 10, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Product lock timeout");
+                  }
+                  product.setReserveStock(product.getReserveStock() - item.getQuantity());
+                  productRepository.save(product);
+                } catch (InterruptedException e) {
+                  throw new RuntimeException(e.getMessage());
+                } finally {
+                  if (productLock.isHeldByCurrentThread()) {
+                    productLock.unlock();
+                  }
+                }
+              });
     order.getPayment().setStatus(PaymentStatus.FAILED.toString());
     orderRepository.save(order);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e.getMessage());
+    } finally {
+      if (orderLock.isHeldByCurrentThread()) {
+        orderLock.unlock();
+      }
+    }
   }
 
   public boolean validWebhook(
