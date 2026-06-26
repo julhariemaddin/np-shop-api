@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +31,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public ProductResponse createProduct(ProductRequest product, MultipartFile file) {
     if (file.isEmpty()) {
       throw new RuntimeException("Image file is empty");
@@ -42,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public ProductResponse updateProduct(
       ProductRequest productRequest, MultipartFile file, UUID productId) {
     Category category =
@@ -53,26 +57,14 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public ProductResponse addImage(MultipartFile file , UUID productId){
     return getProductResponse(addImageToProduct(file,productId));
   }
 
   @Override
-  public Page<ProductResponse> getProducts(Pageable pageable) {
-    return productRepository.findAll(pageable).map(this::getProductResponse);
-  }
-
-  @Override
-  public ProductResponse getProduct(UUID productId) {
-    Product product =
-        productRepository
-            .findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
-    return getProductResponse(product);
-  }
-
-  @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public void deleteProduct(UUID productId) {
     Product product = checkProductExistsAndGetProduct(productId);
     for (Image image : product.getImages()) {
@@ -81,9 +73,9 @@ public class ProductServiceImpl implements ProductService {
     productRepository.deleteById(productId);
   }
 
-
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public Product addImageToProduct(
           MultipartFile file, UUID productId) {
     if(file.isEmpty()) throw new RuntimeException("Image file is empty");
@@ -92,22 +84,23 @@ public class ProductServiceImpl implements ProductService {
                     .findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
-      Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
-      if(newProduct.getImages().size()>=5){
-        throw new RuntimeException("Image upload max reached");
-      }
-      if(image == null) {
-        newProduct.addImage(getImage(file));
-      }else{
-        throw new RuntimeException("Image already exists");
-      }
+    Image image = imageRepository.findByFileName(file.getOriginalFilename()).orElse(null);
+    if(newProduct.getImages().size()>=5){
+      throw new RuntimeException("Image upload max reached");
+    }
+    if(image == null) {
+      newProduct.addImage(getImage(file));
+    }else{
+      throw new RuntimeException("Image already exists");
+    }
     return productRepository.save(newProduct);
   }
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public Product createAndSaveProduct(
-      ProductRequest product, MultipartFile file, Category category) {
+          ProductRequest product, MultipartFile file, Category category) {
     Product newProduct = new Product();
     newProduct.setName(product.getName());
     newProduct.setDescription(product.getDescription());
@@ -123,12 +116,13 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public Product updateAndSaveProduct(
-      ProductRequest product, MultipartFile file, Category category, UUID productId) {
+          ProductRequest product, MultipartFile file, Category category, UUID productId) {
     Product newProduct =
-        productRepository
-            .findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
+            productRepository
+                    .findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
     newProduct.setName(product.getName());
     newProduct.setDescription(product.getDescription());
     if(newProduct.getReserveStock() > product.getStock()){
@@ -151,12 +145,30 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
+  @CacheEvict(value = "products", allEntries = true)
   public void deleteImage(UUID imageId) {
     Image image =  imageRepository
-        .findById(imageId)
-        .orElseThrow(() -> new RuntimeException("Image not found"));
+            .findById(imageId)
+            .orElseThrow(() -> new RuntimeException("Image not found"));
     removeFile(image.getPublicId());
     imageRepository.delete(image);
+  }
+
+  @Override
+  @Cacheable(
+          value = "products", key = "#pageable.pageSize + '-' + #pageable.pageNumber + '-' + #pageable.sort"
+  )
+  public Page<ProductResponse> getProducts(Pageable pageable) {
+    return productRepository.findAll(pageable).map(this::getProductResponse);
+  }
+
+  @Override
+  public ProductResponse getProduct(UUID productId) {
+    Product product =
+            productRepository
+                    .findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+    return getProductResponse(product);
   }
 
   public Product checkProductExistsAndGetProduct(UUID productId) {
@@ -200,10 +212,6 @@ public class ProductServiceImpl implements ProductService {
             .build();
   }
 
-
-
-  ///Need Refactoring
-  //TODO change the persistent to the Cloudinary
   private Map<String , Object> uploadImage(MultipartFile file) {
     String originalFilename = file.getOriginalFilename();
     if (originalFilename == null
@@ -221,9 +229,6 @@ public class ProductServiceImpl implements ProductService {
   private void removeFile(String publicId){
    cloudinaryService.deleteImage(publicId);
   }
-  ///End of refactoring
-
-
 
   public boolean checkProductStatus(UUID productId) {
     return  productRepository.existsById(productId);
@@ -242,7 +247,6 @@ public class ProductServiceImpl implements ProductService {
     image.setContentType(contentType);
     return image;
   }
-
 
   public Page<ProductResponse> search(Pageable pageable , String keyword) {
     return productRepository.search(keyword, pageable).map(this::getProductResponse);

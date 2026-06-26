@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -44,6 +45,10 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+  @CacheEvict(
+          value = "products",
+          allEntries = true
+  )
   public void deleteCategory(UUID id) {
     if (!categoryRepository.existsById(id)) {
       throw new RuntimeException(String.format("category : %s not existed", id));
