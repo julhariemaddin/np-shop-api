@@ -11,6 +11,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +24,10 @@ public class CategoryServiceImpl implements CategoryService {
   @Transactional
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
-  @CacheEvict(
-          value = "products",
-          allEntries = true
-  )
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", allEntries = true)
+  })
   public CategoryResponse createCategory(CategoryRequest createCategoryRequest) {
     Category category =
         categoryRepository.findByCategoryName(createCategoryRequest.getCategoryName());
@@ -41,6 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
   }
 
   @Override
+  @Cacheable(value = "categories")
   public List<CategoryResponse> getAllCategories() {
     return categoryRepository.findAll().stream()
         .map(c -> new CategoryResponse(c.getId(), c.getCategoryName()))
@@ -49,10 +52,12 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
-  @CacheEvict(
-          value = "products",
-          allEntries = true
-  )
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", allEntries = true),
+          @CacheEvict(value = "category" , key = "#id"),
+          @CacheEvict(value = "categories" ,  allEntries = true)
+  })
   public void deleteCategory(UUID id) {
     if (!categoryRepository.existsById(id)) {
       throw new RuntimeException(String.format("category : %s not existed", id));
@@ -62,10 +67,11 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
-  @CacheEvict(
-          value = "products",
-          allEntries = true
-  )
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", allEntries = true),
+          @CacheEvict(value = "category" , key = "#id")
+  })
   public CategoryResponse updateCategory(UUID id, CategoryRequest categoryRequest) {
     Category category =
         categoryRepository
@@ -78,6 +84,7 @@ public class CategoryServiceImpl implements CategoryService {
   }
 
   @Override
+  @Cacheable(value = "category" , key = "#id")
   public CategoryResponse getCategoryById(UUID id) {
     Category category =
         categoryRepository

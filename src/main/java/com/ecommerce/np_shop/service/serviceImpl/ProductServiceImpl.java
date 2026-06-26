@@ -12,6 +12,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -45,7 +46,10 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", key = "#productId")
+  })
   public ProductResponse updateProduct(
       ProductRequest productRequest, MultipartFile file, UUID productId) {
     Category category =
@@ -57,14 +61,20 @@ public class ProductServiceImpl implements ProductService {
 
   @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", key = "#productId")
+  })
   public ProductResponse addImage(MultipartFile file , UUID productId){
     return getProductResponse(addImageToProduct(file,productId));
   }
 
   @Override
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", key = "#productId")
+  })
   public void deleteProduct(UUID productId) {
     Product product = checkProductExistsAndGetProduct(productId);
     for (Image image : product.getImages()) {
@@ -75,7 +85,10 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", key = "#productId")
+  })
   public Product addImageToProduct(
           MultipartFile file, UUID productId) {
     if(file.isEmpty()) throw new RuntimeException("Image file is empty");
@@ -98,8 +111,7 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
-  public Product createAndSaveProduct(
+  protected Product createAndSaveProduct(
           ProductRequest product, MultipartFile file, Category category) {
     Product newProduct = new Product();
     newProduct.setName(product.getName());
@@ -116,7 +128,10 @@ public class ProductServiceImpl implements ProductService {
 
   @Transactional
   @PreAuthorize("hasAnyRole('ADMIN','SUPER_ADMIN')")
-  @CacheEvict(value = "products", allEntries = true)
+  @Caching(evict = {
+          @CacheEvict(value = "products", allEntries = true),
+          @CacheEvict(value = "product", key = "#productId")
+  })
   public Product updateAndSaveProduct(
           ProductRequest product, MultipartFile file, Category category, UUID productId) {
     Product newProduct =
@@ -163,6 +178,9 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
+  @Cacheable(
+          value = "product" , key = "#productId"
+  )
   public ProductResponse getProduct(UUID productId) {
     Product product =
             productRepository

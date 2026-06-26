@@ -10,7 +10,6 @@ import com.ecommerce.np_shop.redis.service.CartService;
 import com.ecommerce.np_shop.repo.AccountRepository;
 import com.ecommerce.np_shop.repo.OrderItemRepository;
 import com.ecommerce.np_shop.repo.OrderRepository;
-import com.ecommerce.np_shop.repo.ProductRepository;
 import com.ecommerce.np_shop.service.OrderService;
 import com.ecommerce.np_shop.service.PaymentService;
 import com.ecommerce.np_shop.service.ProductService;
