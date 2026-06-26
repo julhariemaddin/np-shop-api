@@ -26,7 +26,8 @@ public class CategoryServiceImpl implements CategoryService {
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
   @Caching(evict = {
           @CacheEvict(value = "products", allEntries = true),
-          @CacheEvict(value = "product", allEntries = true)
+          @CacheEvict(value = "product", allEntries = true),
+          @CacheEvict(value = "categories" ,  allEntries = true)
   })
   public CategoryResponse createCategory(CategoryRequest createCategoryRequest) {
     Category category =
@@ -70,6 +71,7 @@ public class CategoryServiceImpl implements CategoryService {
   @Caching(evict = {
           @CacheEvict(value = "products", allEntries = true),
           @CacheEvict(value = "product", allEntries = true),
+          @CacheEvict(value = "categories" ,  allEntries = true),
           @CacheEvict(value = "category" , key = "#id")
   })
   public CategoryResponse updateCategory(UUID id, CategoryRequest categoryRequest) {
