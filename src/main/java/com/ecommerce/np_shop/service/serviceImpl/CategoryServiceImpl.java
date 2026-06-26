@@ -22,6 +22,10 @@ public class CategoryServiceImpl implements CategoryService {
   @Transactional
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+  @CacheEvict(
+          value = "products",
+          allEntries = true
+  )
   public CategoryResponse createCategory(CategoryRequest createCategoryRequest) {
     Category category =
         categoryRepository.findByCategoryName(createCategoryRequest.getCategoryName());
@@ -58,6 +62,10 @@ public class CategoryServiceImpl implements CategoryService {
 
   @Override
   @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+  @CacheEvict(
+          value = "products",
+          allEntries = true
+  )
   public CategoryResponse updateCategory(UUID id, CategoryRequest categoryRequest) {
     Category category =
         categoryRepository
